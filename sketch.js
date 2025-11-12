@@ -28,14 +28,29 @@ let score = 0;
 let joyX = 0, joyY = 0;
 let joystickSize = 60;
 
+let defaultImage = "./image.png"
+
 // --- Milestones ---
 let scoreMilestones = [
   { score: 1, msgs: ["Oooh look at you~ not bad!"] },
   { score: 5, msgs: ["Don't get excited, things are speeding up~"] },
   { score: 10, msgs: ["Keep it up! You're doing great!"] },
-  { score: 50, msgs: ["Wow, impressive!"] },
+  { score: 50, msgs: ["Wow, impressive!"] }, 
   { score: 100, msgs: ["Unstoppable! You're a dodge master!"] }
-];
+]; 
+
+// let interactableDialog = [
+//   {dialog2: [
+//     { answer: 1, msgs: ["blab"] },
+//     { answer: 2, msgs: ["blab"] },
+//   ], text: " 50 scores, want to continue ?"}
+// ]
+// function dialogInteration(){
+//   switch(button) {
+//     case 2: showGameOver()
+//   }
+// }
+
 let milestoneIndex = 0;
 
 function setup() {
@@ -51,11 +66,11 @@ function draw() {
   let dialogH = height * 0.25;
   let gameH = height * 0.55;
   let controlH = height * 0.20;
-
   // TOP: dialog box (always visible)
   fill(30);
   rect(0, 0, width, dialogH);
   fill(255);
+  //image(character, x, y, width, height)
   text(typedText, 20, 20, width - 40, dialogH - 40);
   if (showContinueArrow && dialogState === "waiting") {
     textAlign(RIGHT, BOTTOM);
@@ -108,7 +123,7 @@ function startTypingNext() {
   currentDialogText = dialogQueue.shift();
   typedText = "";
   charIndex = 0;
-  lastTypeTime = millis();
+  lastTypeTime = millis(); //look up
   dialogState = "typing";
   showContinueArrow = false;
   // detect if this line should show choice (start prompt)
