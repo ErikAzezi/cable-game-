@@ -1,11 +1,11 @@
 let gameState = "dialog"; // "dialog" | "game" | "gameOver"
 let dialogState = "idle"; // "idle" | "typing" | "waiting" (for continue) | "choice"
-
+let dialogcharacterImg;
 // --- Dialog storage (queue-based) ---
 let dialogQueue = [
-  "Hey there! I’m Cable, the socket hero ⚡",
-  "I’ve been waiting for someone to test my reflexes!",
-  "Would you like to start the game?"
+  "Hey there! who is there..? ⚡",
+  "Do you think you could attach me to the correct appliances?",
+  "Great! however, please be mindful of the red currents- they can damage me!"
 ];
 let currentDialogText = "";
 let typedText = "";
@@ -28,7 +28,6 @@ let score = 0;
 let joyX = 0, joyY = 0;
 let joystickSize = 60;
 
-let defaultImage = "./image.png"
 
 // --- Milestones ---
 let scoreMilestones = [
@@ -53,6 +52,10 @@ let scoreMilestones = [
 
 let milestoneIndex = 0;
 
+function preload() {
+  dialogcharacterImg = loadImage("Image1.png");
+}
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(LEFT, TOP);
@@ -70,13 +73,30 @@ function draw() {
   fill(30);
   rect(0, 0, width, dialogH);
   fill(255);
-  //image(character, x, y, width, height)
-  text(typedText, 20, 20, width - 40, dialogH - 40);
-  if (showContinueArrow && dialogState === "waiting") {
-    textAlign(RIGHT, BOTTOM);
-    text("▼", width - 25, dialogH - 15);
-    textAlign(LEFT, TOP);
-  }
+
+// Draw image on right side without warping
+let textMargin = 20;
+let textW = width - textMargin * 3;
+
+if (dialogcharacterImg) {
+  let aspect = dialogcharacterImg.width / dialogcharacterImg.height;
+  let imgH = dialogH * 0.9;
+  let imgW = imgH * aspect;
+  let imgX = width - imgW - 10;
+  let imgY = (dialogH - imgH) / 2;
+  image(dialogcharacterImg, imgX, imgY, imgW, imgH);
+  textW -= imgW; // reduce text space to make room for image
+}
+
+// Draw text slightly to the left
+text(typedText, textMargin, 20, textW, dialogH - 40);
+
+// Continue arrow logic
+if (showContinueArrow && dialogState === "waiting") {
+  textAlign(RIGHT, BOTTOM);
+  text("▼", width - 25, dialogH - 15);
+  textAlign(LEFT, TOP);
+}
 
   // MID: game box (always visible)
   fill(10);
@@ -113,7 +133,7 @@ function draw() {
 }
 
 // ---------------- Dialog helpers ----------------
-function startTypingNext() {
+  function startTypingNext() {
   if (dialogQueue.length === 0) {
     dialogState = "idle";
     typedText = "";
@@ -123,12 +143,13 @@ function startTypingNext() {
   currentDialogText = dialogQueue.shift();
   typedText = "";
   charIndex = 0;
-  lastTypeTime = millis(); //look up
+  lastTypeTime = millis();
   dialogState = "typing";
   showContinueArrow = false;
-  // detect if this line should show choice (start prompt)
-  if (currentDialogText.toLowerCase().includes("start the game") || currentDialogText.toLowerCase().includes("start now") || currentDialogText.toLowerCase().includes("would you like to start")) {
-    console.log("yes", dialogQueue, dialogState)
+
+  // Only show YES/NO choice after the last line is typed
+  if (dialogQueue.length === 0) {
+    // This will trigger after the current line finishes typing
     showChoice = true;
   }
 }
