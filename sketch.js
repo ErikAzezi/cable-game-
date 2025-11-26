@@ -1,4 +1,3 @@
-let pixelFont;
 let gameState = "dialog"; // "dialog" | "game" | "gameOver"
 let dialogState = "idle"; // "idle" | "typing" | "waiting" (for continue) | "choice"
 let dialogcharacterImg;
@@ -110,7 +109,6 @@ let scoreMilestones = [
 let milestoneIndex = 0;
 
 function preload() { 
-  pixelFont = loadFont("m3x6.ttf");
   dialogcharacterImg = loadImage("gifproject.GIF");
   cornerImages.default = dialogcharacterImg; 
   cornerImages.death = loadImage("plugnose.PNG");
@@ -145,14 +143,11 @@ function setup() {
   // If you rely on dialogH/gameH/controlH as variables outside draw(), you can set them:
   // dialogH = height * 0.22; gameH = height * 0.58; controlH = height * 0.20;
   currentCornerImage = cornerImages.default;
-  textFont(pixelFont);
   textAlign(LEFT, TOP);
   textSize(18);
   noStroke();
   startTypingNext(); // begin initial dialog
 }
-
-
 
 function windowResized() {
   // resize canvas to full viewport
@@ -166,100 +161,87 @@ function draw() {
   let controlH = height * 0.25;
   let sideW = 30; // width of the side frames
 
-  // --- TOP: dialog box ---
+  // TOP: dialog box (always visible)
   fill(30);
   rect(0, 0, width, dialogH);
   fill(255);
 
-  // Draw image on right side
+  // Draw image on right side without warping
   let textMargin = 20;
   let textW = width - textMargin * 3;
+
   if (currentCornerImage) {
     let aspect = currentCornerImage.width / currentCornerImage.height;
     let imgH = dialogH * 0.9;
     let imgW = imgH * aspect;
+
     let imgX = width - imgW - 10;
     let imgY = (dialogH - imgH) / 2;
+
     image(currentCornerImage, imgX, imgY, imgW, imgH);
     textW -= imgW;
   }
 
-  // Draw dialog text with scalable font
-  let maxTextSize = dialogH * 0.25;
-  let minTextSize = 18;
-  let ts = constrain(maxTextSize, minTextSize, maxTextSize);
-  textSize(ts);
+  // Draw text slightly to the left
+  textSize(min(18, dialogH / 8));
   let textBoxHeight = dialogH * 0.9;
+  let lineH = 22;
   let maxLines = floor(textBoxHeight / lineH);
 
- // Word-wrap typedText manually
-// Word-wrap typedText manually
-let displayLines = [];
-let words = typedText.split(' ');
-let line = '';
-for (let i = 0; i < words.length; i++) {
-  let testLine = line + words[i] + ' ';
-  let testWidth = textWidth(testLine);
-  if (testWidth > textW) {
-    displayLines.push(line);
-    line = words[i] + ' ';
-  } else {
-    line = testLine;
+  let lines = typedText.split("\n");
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    typedText = lines.join("\n");
   }
-}
-if (line.length > 0) displayLines.push(line); // push final line
 
-// --- Adjust font size to fit dialog box ---
-let maxTextHeight = dialogH * 0.9; // total vertical space for text
-let lineCount = displayLines.length;
-let adjustedFontSize = maxTextHeight / lineCount / 1.2; // lineH = fontSize * 1.2
-adjustedFontSize = constrain(adjustedFontSize, 12, ts); // ts = max text size already in your code
-textSize(adjustedFontSize);
-let lineH = adjustedFontSize * 1.2; // recalc line height after adjusting font
+  text(typedText, textMargin, 20, textW, textBoxHeight);
 
-// Draw text
-textAlign(LEFT, TOP);
-for (let i = 0; i < displayLines.length; i++) {
-  text(displayLines[i], textMargin, 20 + i * lineH, textW, lineH);
-}
-
-
-
-
-  // Continue arrow
+  // Continue arrow logic
   if (showContinueArrow && dialogState === "waiting") {
     textAlign(RIGHT, BOTTOM);
     text("▼", width - 25, dialogH - 15);
     textAlign(LEFT, TOP);
   }
 
-  // --- MID: game area frames ---
+  // MID: game area surrounded by frames
+  // LEFT frame
   fill(30);
-  rect(0, dialogH, sideW, gameH);            // left
-  rect(width - sideW, dialogH, sideW, gameH); // right
-  fill(10);
-  rect(sideW, dialogH, width - 2 * sideW, gameH); // game area
+  rect(0, dialogH, sideW, gameH);
+  // RIGHT frame
+  fill(30);
+  rect(width - sideW, dialogH, sideW, gameH);
+  // TOP frame (already your dialog, but could add border if needed)
+  // BOTTOM frame (optional, already covered by control area)
 
-  // --- Score ---
+  // CENTER game screen
+  fill(10);
+  rect(sideW, dialogH, width - 2 * sideW, gameH);
+
+  // Score tracker top-left inside game box
   fill(255);
-  textSize(ts); // same size as dialog (or change if you want it smaller)
+  textAlign(LEFT, TOP);
   if (gameState === "game") text("Score: " + score, sideW + 10, dialogH + 10);
 
-  // --- BOTTOM: control area ---
+  // BOTTOM: controller box (always visible)
   fill(30);
   rect(0, dialogH + gameH, width, controlH);
 
-  // --- Dialog typing ---
+  // Dialog typing update (non-blocking)
   if (dialogState === "typing") updateTyping();
 
-  // --- Game logic ---
-  if (gameState === "game") playGame(dialogH, gameH, controlH);
-  else if (gameState === "gameOver") showGameOver(dialogH);
+  // Game runs independently when in "game" or even when dialog shows
+  if (gameState === "game") {
+    playGame(dialogH, gameH, controlH);
+  } else if (gameState === "gameOver") {
+    showGameOver(dialogH);
+  }
 
-  // Auto-start next dialog if idle
-  if (dialogState === "idle" && dialogQueue.length > 0) startTypingNext();
+  // If queue has lines and nothing is typing, start next automatically
+  if (dialogState === "idle" && dialogQueue.length > 0) {
+    startTypingNext();
+  }
 
-  // Create choice buttons if needed
+  // If we finished all dialogs and there is a pending choice, create buttons
   if (dialogState === "waiting" && showChoice && !yesBtn && !noBtn) {
     createChoiceButtons();
   }
