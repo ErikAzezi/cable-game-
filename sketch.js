@@ -120,7 +120,7 @@ function preload() {
   dialogcharacterImg = loadImage("gifproject.GIF");
   cornerImages.default = dialogcharacterImg; 
   cornerImages.death = loadImage("plugnose.PNG");
-  bgImg = loadImage("/background2.png"); 
+  bgImg = loadImage("background2.png"); 
 }
 
 
