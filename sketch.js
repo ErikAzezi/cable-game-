@@ -424,9 +424,11 @@ function declineGame() {
 
 // ---------------- Game logic ----------------
 function playGame(dialogH, gameH, controlH) {
+    let sideW = 30; // same as in draw()
   // constrain player to game box
-  player.x = constrain(player.x, player.size/2, width - player.size/2);
+  player.x = constrain(player.x, sideW + player.size/2, width - sideW - player.size/2);
   player.y = constrain(player.y, dialogH + player.size/2, dialogH + gameH - player.size/2);
+
 
   // draw player
   fill(255);
@@ -483,9 +485,10 @@ function playGame(dialogH, gameH, controlH) {
       }
     }
 
-    if (a.x < 0 - padding || a.x > width + padding || a.y < dialogH + padding || a.y > dialogH + gameH - padding) {
-      arrows.splice(i, 1);
-    }
+    if (a.x < sideW - padding || a.x > width - sideW + padding || a.y < dialogH + padding || a.y > dialogH + gameH - padding) {
+  arrows.splice(i, 1);
+}
+    
   }
 } // [CHANGE] End milestoneChoiceActive check
 
