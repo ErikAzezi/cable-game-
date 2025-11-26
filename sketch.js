@@ -208,8 +208,7 @@ for (let i = 0; i < words.length; i++) {
   }
 }
 
-// <-- ADD THIS LINE
-if (line.length > 0) displayLines.push(line); // push the final line
+displayLines.push(line); // add last line
 
 // Clamp to maximum number of lines
 if (displayLines.length > maxLines) displayLines = displayLines.slice(0, maxLines);
