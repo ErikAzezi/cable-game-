@@ -508,45 +508,66 @@ if (!milestoneChoiceActive) {
 }
 
 function touchStarted() {
-  // check if touch started in joystick area
-  let cx = width/2;
-  let cy = layout.gameBottom + layout.controlH/2;
+  let dialogH = height * 0.25;
+  let gameH = height * 0.50;
+  let controlH = height * 0.25;
+  let y = mouseY || (touches.length ? touches[0].y : 0);
+
+  // --- First, check if touch started in joystick area ---
+  let cx = width / 2;
+  let cy = dialogH + gameH + controlH / 2;
   let dx = mouseX - cx;
   let dy = mouseY - cy;
-  if (sqrt(dx*dx + dy*dy) <= joystickSize*2) {
+  if (sqrt(dx * dx + dy * dy) <= joystickSize * 2) {
     draggingJoystick = true;
     dragId = touches.length ? touches[0].id : 'mouse';
     dragStartX = mouseX;
     dragStartY = mouseY;
-    return false; // prevent scroll
+    return false; // prevent scrolling
   }
+
+  // --- If not joystick, check other clicks/taps ---
+  handleClickOrTouch();
+
+  return false; // prevent scrolling
 }
 
 function touchMoved() {
-  if (draggingJoystick) {
-    let cx = width/2;
-    let cy = layout.gameBottom + layout.controlH/2;
+  if (!draggingJoystick) return;
 
-    let dx = mouseX - cx;
-    let dy = mouseY - cy;
+  let dialogH = height * 0.25;
+  let gameH = height * 0.50;
+  let controlH = height * 0.25;
+  let cx = width / 2;
+  let cy = dialogH + gameH + controlH / 2;
 
-    // constrain handle visually
-    let mag = sqrt(dx*dx + dy*dy);
-    if (mag > joystickSize) {
-      dx = dx / mag * joystickSize;
-      dy = dy / mag * joystickSize;
-    }
+  // Track the same finger if touch, or mouse
+  let tx = touches.length ? touches[0].x : mouseX;
+  let ty = touches.length ? touches[0].y : mouseY;
 
-    // normalized movement values
-    joyX = dx / joystickSize;
-    joyY = dy / joystickSize;
-    
-    return false; // prevent scroll
+  let dx = tx - cx;
+  let dy = ty - cy;
+
+  // Constrain handle visually
+  let mag = sqrt(dx*dx + dy*dy);
+  if (mag > joystickSize) {
+    dx = dx / mag * joystickSize;
+    dy = dy / mag * joystickSize;
   }
+
+  // Update normalized joystick values
+  joyX = dx / joystickSize;
+  joyY = dy / joystickSize;
+
+  return false; // prevent scroll
 }
 
 function touchEnded() {
-  if (draggingJoystick) {
+  // Only reset if this finger/mouse was controlling joystick
+  if (!draggingJoystick) return;
+
+  // Check if the current dragId is gone (for multi-touch safety)
+  if (dragId === 'mouse' || touches.length === 0) {
     draggingJoystick = false;
     dragId = null;
     joyX = 0;
