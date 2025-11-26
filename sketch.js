@@ -111,16 +111,33 @@ function preload() {
 }
 
 
+function getViewportSize() {
+  return {
+    w: Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0),
+    h: Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
+  };
+}
+
 function setup() {
-  let w = document.documentElement.clientWidth;
-  let h = document.documentElement.clientHeight;
-  createCanvas(w, h);
+  // get correct visible viewport size on mobile
+  const vp = getViewportSize();
+  let w = vp.w;
+  let h = vp.h;
 
+  // create canvas and make it behave like a full-screen element
+  let cnv = createCanvas(w, h);
+  cnv.style('display', 'block');   // remove inline gap the browser sometimes adds
+  cnv.position(0, 0);             // ensure top-left corner
 
-  dialogH = height * 0.22;
-  gameH   = height * 0.58;
-  controlH = height * 0.20;
+  // optional: prevent touch scrolling/pinch on canvas for better mobile behavior
+  if (cnv.elt) {
+    cnv.elt.style.touchAction = 'none';
+    cnv.elt.style.userSelect = 'none';
+  }
 
+  // Recalculate layout sizes (use these global values later if you reference them)
+  // If you rely on dialogH/gameH/controlH as variables outside draw(), you can set them:
+  // dialogH = height * 0.22; gameH = height * 0.58; controlH = height * 0.20;
   currentCornerImage = cornerImages.default;
   textAlign(LEFT, TOP);
   textSize(18);
@@ -129,9 +146,8 @@ function setup() {
 }
 
 function windowResized() {
-  let w = document.documentElement.clientWidth;
-  let h = document.documentElement.clientHeight;
-  resizeCanvas(w, h);
+  const vp = getViewportSize();
+  resizeCanvas(vp.w, vp.h);
 
   // Recalculate layout again after resize/orientation change
   dialogH = height * 0.22;
@@ -560,5 +576,3 @@ function resetGame() {
   startTypingNext();
 }
  
-
-function windowResized(){ resizeCanvas(windowWidth, windowHeight); }
