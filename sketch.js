@@ -10,7 +10,7 @@ let currentMilestone = 0;
 let milestoneButtons = [];
 
 let deathDialogs = [
-  ["BRO, that is clearly my nose, be careful."],
+  ["AHH, that is clearly my nose, be careful."],
   ["Okay okay… what part of DO NOT PLUG INTO MY NOSE* you dont understand?"],
   ["You know, this can damage me right?"],
   ["Look, I will dumb this down for you since you dont get it, AVOID THE RED ARROWS"],
@@ -103,13 +103,13 @@ let joystickSize = 60;
 // --- Milestones ---
 let scoreMilestones = [
   { score: 1, msgs: ["Oooh look at you~ not bad!"] },
-  { score: 5, msgs: ["Don't get excited, things are speeding up~"] },
-  { score: 10, msgs: ["Keep it up! You're doing great!"] },
-  { score: 15, msgs: ["Wow, you're on fire!"] },
+  { score: 5, msgs: ["Nice, that is 10 percent of all the appliances in the warehouse done."] },
+  { score: 10, msgs: ["that is 20 percent, watch out, some of those arrows appear to be moving differently now."] },
+  { score: 15, msgs: ["that's 30 percent now."] },
   { score: 20, msgs: ["Halfway there!"] },
-  { score: 30, msgs: ["You're a pro at this!"] },
-  { score: 40, msgs: ["Incredible reflexes!"] },
-  { score: 50, msgs: ["Wow, impressive!"] }
+  { score: 30, msgs: ["Wow, 45 percent already!!"] },
+  { score: 40, msgs: ["80 percent done!"] },
+  { score: 50, msgs: ["Incredible! that is all of them!"] }
 ]; 
 
 let milestoneIndex = 0;
@@ -437,7 +437,7 @@ function startGame() {
   dialogState = "idle";
   showContinueArrow = false;
   gameState = "game";
-  player = { x: width/2, y: height * 0.25 + (height * 0.55)/2, size: 30 };
+  player = { x: width/2, y: height * 0.25 + (height * 0.55)/2, size: 15 }; 
   arrows = [];
   score = 0;
   arrowSpeed = 3;
@@ -501,7 +501,9 @@ pop();
     push();
     translate(a.x, a.y);
     rotate(atan2(a.dy, a.dx));
-    triangle(0, 0, -20, -8, -20, 8);
+    let arrowLength = 10; // tip-to-base
+    let arrowWidth  = 4;  // half-height
+    triangle(0, 0, -arrowLength, -arrowWidth, -arrowLength, arrowWidth);
     pop();
 
     // Zigzag motion
@@ -530,7 +532,11 @@ if (score >= 20 && purpleLineCooldown <= 0) {
     a.x += a.dx * a.speed;
     a.y += a.dy * a.speed;
 
+    let arrowHitRadius = 4; // same as arrowWidth
     let d = dist(player.x, player.y, a.x, a.y);
+    
+    if (d < player.size/2 + arrowHitRadius) {
+
     if (d < player.size/2 + 8) {
       if (a.good) {
         score++;
@@ -573,6 +579,7 @@ if (!milestoneChoiceActive) {
   player.y += joyY * playerSpeed;
 }
 
+}
 }
 
 function touchStarted() {
