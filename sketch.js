@@ -189,35 +189,40 @@ function draw() {
   let minTextSize = 18;
   let ts = constrain(maxTextSize, minTextSize, maxTextSize);
   textSize(ts);
-  let lineH = ts * 1.2;
   let textBoxHeight = dialogH * 0.9;
   let maxLines = floor(textBoxHeight / lineH);
 
  // Word-wrap typedText manually
+// Word-wrap typedText manually
 let displayLines = [];
 let words = typedText.split(' ');
 let line = '';
 for (let i = 0; i < words.length; i++) {
   let testLine = line + words[i] + ' ';
   let testWidth = textWidth(testLine);
-  if (testWidth > textW) {  // if adding the next word exceeds text box width
-    displayLines.push(line); // commit current line
-    line = words[i] + ' ';   // start new line
+  if (testWidth > textW) {
+    displayLines.push(line);
+    line = words[i] + ' ';
   } else {
-    line = testLine;          // keep building current line
+    line = testLine;
   }
 }
+if (line.length > 0) displayLines.push(line); // push final line
 
-displayLines.push(line); // add last line
-
-// Clamp to maximum number of lines
-if (displayLines.length > maxLines) displayLines = displayLines.slice(0, maxLines);
+// --- Adjust font size to fit dialog box ---
+let maxTextHeight = dialogH * 0.9; // total vertical space for text
+let lineCount = displayLines.length;
+let adjustedFontSize = maxTextHeight / lineCount / 1.2; // lineH = fontSize * 1.2
+adjustedFontSize = constrain(adjustedFontSize, 12, ts); // ts = max text size already in your code
+textSize(adjustedFontSize);
+let lineH = adjustedFontSize * 1.2; // recalc line height after adjusting font
 
 // Draw text
 textAlign(LEFT, TOP);
 for (let i = 0; i < displayLines.length; i++) {
   text(displayLines[i], textMargin, 20 + i * lineH, textW, lineH);
 }
+
 
 
 
