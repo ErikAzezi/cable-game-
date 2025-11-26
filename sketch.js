@@ -198,8 +198,9 @@ function draw() {
 
   textAlign(LEFT, TOP);
   for (let i = 0; i < displayLines.length; i++) {
-    text(displayLines[i], textMargin, 20 + i * lineH, textW, lineH);
-  }
+  text(displayLines[i], textMargin, 10 + i * lineH, textW, lineH);
+}
+
 
   // Continue arrow
   if (showContinueArrow && dialogState === "waiting") {
