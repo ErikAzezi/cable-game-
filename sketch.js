@@ -8,7 +8,7 @@ let deathCount = 0;
 let milestoneChoiceActive = false;
 let currentMilestone = 0;
 let milestoneButtons = [];
-
+let bgImg;
 
 let deathDialogs = [
   ["AHH, that is clearly my nose, be careful."],
@@ -49,16 +49,16 @@ let milestoneChoices = {
   15: {
     question: ["that's 30 percent now."],
     options: ["Stop interupting me", "why are we doing this again", "OK", "Huh"],
-    postText: ["Arrows are speeding up, be careful of my nose!"]
+    postText: ["watch out, dont get tangled in those wires now."]
   },
   20: {
     question: ["We are half way there now."],
     options: ["You mean 40 percent", "Your math is bad", "OK", "I'm bored"],
-    postText: ["WATCH OUT FOR THOSE PURPLE ARROWS, they will slow you down"]
+    postText: ["I don't really care about your math skills."]
   },
   30: {
     question: ["Wow, 45 percent already!"],
-    options: ["This is getting tiring", "Can we stop?", "OK", "math's not right"],
+    options: ["This is getting tiring", "Can we stop?", "OK", "math's still not right"],
     postText: ["Can you stop complaining?"]
   },
   40: {
@@ -120,6 +120,7 @@ function preload() {
   dialogcharacterImg = loadImage("gifproject.GIF");
   cornerImages.default = dialogcharacterImg; 
   cornerImages.death = loadImage("plugnose.PNG");
+  bgImg = loadImage("/background2.png"); 
 }
 
 
@@ -132,6 +133,7 @@ function getViewportSize() {
 
 function setup() {
   // get correct visible viewport size on mobile
+  textFont('Pixelify Sans');
   const vp = getViewportSize();
   let w = vp.w;
   let h = vp.h;
@@ -163,14 +165,16 @@ function windowResized() {
 }
 
 function draw() {
-  background(0);
+  image(bgImg, 0, 0, width, height);
+
   let dialogH = height * 0.25;
   let gameH = height * 0.50;
   let controlH = height * 0.25;
   let sideW = 30; // width of the side frames
 
   // TOP: dialog box (always visible)
-  fill(30);
+  fill(0, 200);
+  noStroke();
   rect(0, 0, width, dialogH);
   fill(255);
 
@@ -212,16 +216,15 @@ function draw() {
   }
 
   // MID: game area surrounded by frames
-  // LEFT frame
-  fill(30);
-  rect(0, dialogH, sideW, gameH);
-  // RIGHT frame
-  fill(30);
-  rect(width - sideW, dialogH, sideW, gameH);
+  fill(0, 200);
+  rect(0, dialogH, sideW, gameH);              // left frame
+  rect(width - sideW, dialogH, sideW, gameH);  // right frame
   // TOP frame (already your dialog, but could add border if needed)
   // BOTTOM frame (optional, already covered by control area)
 
   // CENTER game screen
+  stroke(242, 135, 57);
+  strokeWeight(4);
   fill(10);
   rect(sideW, dialogH, width - 2 * sideW, gameH);
 
@@ -231,7 +234,7 @@ function draw() {
   if (gameState === "game") text("Score: " + score, sideW + 10, dialogH + 10);
 
   // BOTTOM: controller box (always visible)
-  fill(30);
+  fill(0, 200);
   rect(0, dialogH + gameH, width, controlH);
 
   // Dialog typing update (non-blocking)
@@ -701,7 +704,7 @@ function checkMilestones() {
       // Special milestone effects
       if (milestone.score === 10 && !enableZigzagArrows) {
         enableZigzagArrows = true;
-        pushDialogLines(["Uh oh… arrows might start zigzagging now!"]);
+        // pushDialogLines(["Uh oh… arrows might start zigzagging now!"]);
       }
 
       milestoneIndex++;
