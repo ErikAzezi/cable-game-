@@ -9,6 +9,7 @@ let milestoneChoiceActive = false;
 let currentMilestone = 0;
 let milestoneButtons = [];
 
+
 let deathDialogs = [
   ["AHH, that is clearly my nose, be careful."],
   ["Okay okay… what part of DO NOT PLUG INTO MY NOSE* you dont understand?"],
@@ -22,6 +23,7 @@ let deathDialogs = [
   ["This is fine. I’m fine. Everything is fine. HAHAHA.... wait, hello?"],
   ["I cant see, I cant feel, what are you doing to me."],
 ];
+
 
 let enableZigzagArrows = false;
 let draggingJoystick = false;
@@ -466,19 +468,17 @@ function playGame(dialogH, gameH, controlH) {
   // draw player
   push();
   translate(player.x, player.y);
-  fill(255);
+  fill(playerSlowed ? color(128, 0, 255) : color(255));
   noStroke();
 
-  // half-circle base, flat side on top
   let arcWidth = player.size * 0.7;
   let arcHeight = player.size * 1.0;
   arc(0, 0, arcWidth, arcHeight, 0, PI, CHORD);
 
-  // prongs on top
   let prongWidth = player.size * 0.2;
   let prongHeight = player.size * 0.25;
-  rect(-prongWidth - 2, -prongHeight, prongWidth, prongHeight); // left prong
-  rect(2, -prongHeight, prongWidth, prongHeight);               // right prong
+  rect(-prongWidth - 2, -prongHeight, prongWidth, prongHeight);
+  rect(2, -prongHeight, prongWidth, prongHeight);
   pop();
 
   // spawn arrows
@@ -487,16 +487,24 @@ function playGame(dialogH, gameH, controlH) {
     if (frameCount % spawnInterval === 0) spawnArrow(dialogH, gameH);
   }
 
-  // update arrows
+  // spawn purple lines after milestone 30
   if (!milestoneChoiceActive) {
+    if (score >= 30 && purpleLineCooldown <= 0) {
+      if (random() < 0.02) { 
+        spawnPurpleLine(dialogH, gameH);
+        purpleLineCooldown = 120; // 2 seconds at 60 FPS
+      }
+    } else {
+      purpleLineCooldown--;
+    }
+
+    // update arrows
     for (let i = arrows.length - 1; i >= 0; i--) {
       let a = arrows[i];
 
-      // regular movement
       a.x += a.dx * arrowSpeed;
       a.y += a.dy * arrowSpeed;
 
-      // zigzag motion
       if (a.zigzag) {
         if (abs(a.dx) > abs(a.dy)) {
           a.y += sin(frameCount * a.zigFrequency + a.zigPhase) * a.zigAmplitude * 0.1;
@@ -505,7 +513,6 @@ function playGame(dialogH, gameH, controlH) {
         }
       }
 
-      // constrain arrow within game box
       let topY = dialogH + padding;
       let bottomY = dialogH + gameH - padding;
       let leftX = sideW + padding;
@@ -513,20 +520,16 @@ function playGame(dialogH, gameH, controlH) {
 
       if (a.x < leftX || a.x > rightX || a.y < topY || a.y > bottomY) {
         arrows.splice(i, 1);
-        continue; // skip drawing/collision for removed arrow
+        continue;
       }
 
-      // draw arrow
       fill(a.color);
       push();
       translate(a.x, a.y);
       rotate(atan2(a.dy, a.dx));
-      let arrowLength = 10;
-      let arrowWidth = 4;
-      triangle(0, 0, -arrowLength, -arrowWidth, -arrowLength, arrowWidth);
+      triangle(0, 0, -10, -4, -10, 4);
       pop();
 
-      // collision with player
       let d = dist(player.x, player.y, a.x, a.y);
       if (d < player.size/2 + 4) {
         if (a.good) {
@@ -547,20 +550,50 @@ function playGame(dialogH, gameH, controlH) {
         }
       }
     }
+
+    // update purple lines
+    for (let i = purpleLines.length - 1; i >= 0; i--) {
+      let line = purpleLines[i];
+      line.x += line.speed;
+
+      fill(128, 0, 255);
+      rect(line.x, line.y, line.w, line.h);
+
+      if (player.x + player.size/2 > line.x && player.x - player.size/2 < line.x + line.w &&
+          player.y + player.size/2 > line.y && player.y - player.size/2 < line.y + line.h) {
+        playerSlowed = true;
+        slowTimer = 180; // 3 seconds
+      }
+
+      if (line.speed > 0 && line.x > width) purpleLines.splice(i, 1);
+      if (line.speed < 0 && line.x + line.w < 0) purpleLines.splice(i, 1);
+    }
+
+    if (playerSlowed) {
+      playerSpeed = 5 * 0.8;
+      slowTimer--;
+      if (slowTimer <= 0) {
+        playerSlowed = false;
+        playerSpeed = 5;
+      }
+    } else {
+      playerSpeed = 5;
+    }
   }
 
   // joystick draw & input
   if (!milestoneChoiceActive) {
-    let cx = width / 2;
-    let cy = dialogH + gameH + controlH / 2;
-    fill(80); ellipse(cx, cy, joystickSize * 2);
+    let cx = width/2;
+    let cy = dialogH + gameH + controlH/2;
+
+    fill(80); ellipse(cx, cy, joystickSize*2);
     fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
 
-    // move player smoothly in game space
     player.x += joyX * playerSpeed;
     player.y += joyY * playerSpeed;
   }
 }
+
 
 
 function touchStarted() {
@@ -710,27 +743,23 @@ function spawnArrow(dialogH, gameH) {
 }
 
 function spawnPurpleLine(dialogH, gameH) {
-
   let attachedTop = random() < 0.5;   // top or bottom
-  let fromLeft = random() < 0.5;      // entering left or right
-
+  let fromLeft = random() < 0.5;      // direction
   let lineHeight = gameH / 2;
-
   let y = attachedTop ? dialogH : dialogH + gameH - lineHeight;
   let x = fromLeft ? 0 : width;
-
-  // speed: slow (can adjust later)
   let speed = fromLeft ? 3 : -3;
 
   purpleLines.push({
     x: x,
     y: y,
-    w: 4,          // thickness of the line
+    w: 4,
     h: lineHeight,
     speed: speed,
     attachedTop: attachedTop
   });
 }
+
 
 // ---------------- GameOver ----------------
 function showGameOver(dialogH) {
