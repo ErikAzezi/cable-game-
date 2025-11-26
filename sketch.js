@@ -155,60 +155,71 @@ function draw() {
   let dialogH = height * 0.22;
   let gameH = height * 0.48;
   let controlH = height * 0.30;
+  let sideW = 30; // width of the side frames
+
   // TOP: dialog box (always visible)
   fill(30);
   rect(0, 0, width, dialogH);
   fill(255);
 
-// Draw image on right side without warping
-let textMargin = 20;
-let textW = width - textMargin * 3;
+  // Draw image on right side without warping
+  let textMargin = 20;
+  let textW = width - textMargin * 3;
 
-if (currentCornerImage) {
-  let aspect = currentCornerImage.width / currentCornerImage.height;
-  let imgH = dialogH * 0.9;
-  let imgW = imgH * aspect;
+  if (currentCornerImage) {
+    let aspect = currentCornerImage.width / currentCornerImage.height;
+    let imgH = dialogH * 0.9;
+    let imgW = imgH * aspect;
 
-  let imgX = width - imgW - 10;
-  let imgY = (dialogH - imgH) / 2;
+    let imgX = width - imgW - 10;
+    let imgY = (dialogH - imgH) / 2;
 
-  image(currentCornerImage, imgX, imgY, imgW, imgH);
-  textW -= imgW;
-}
+    image(currentCornerImage, imgX, imgY, imgW, imgH);
+    textW -= imgW;
+  }
 
-// Draw text slightly to the left
-textSize(min(18, dialogH / 8));
+  // Draw text slightly to the left
+  textSize(min(18, dialogH / 8));
+  let textBoxHeight = dialogH * 0.9;
+  let lineH = 22;
+  let maxLines = floor(textBoxHeight / lineH);
 
-let textBoxHeight = dialogH * 0.9;
-let lineH = 22;
-let maxLines = floor(textBoxHeight / lineH);
+  let lines = typedText.split("\n");
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    typedText = lines.join("\n");
+  }
 
-let lines = typedText.split("\n");
-if (lines.length > maxLines) {
-  lines = lines.slice(0, maxLines);
-  typedText = lines.join("\n");
-}
+  text(typedText, textMargin, 20, textW, textBoxHeight);
 
-text(typedText, textMargin, 20, textW, textBoxHeight);
+  // Continue arrow logic
+  if (showContinueArrow && dialogState === "waiting") {
+    textAlign(RIGHT, BOTTOM);
+    text("▼", width - 25, dialogH - 15);
+    textAlign(LEFT, TOP);
+  }
 
-// Continue arrow logic
-if (showContinueArrow && dialogState === "waiting") {
-  textAlign(RIGHT, BOTTOM);
-  text("▼", width - 25, dialogH - 15);
-  textAlign(LEFT, TOP);
-}
+  // MID: game area surrounded by frames
+  // LEFT frame
+  fill(30);
+  rect(0, dialogH, sideW, gameH);
+  // RIGHT frame
+  fill(30);
+  rect(width - sideW, dialogH, sideW, gameH);
+  // TOP frame (already your dialog, but could add border if needed)
+  // BOTTOM frame (optional, already covered by control area)
 
-  // MID: game box (always visible)
+  // CENTER game screen
   fill(10);
-  rect(0, dialogH, width, gameH);
+  rect(sideW, dialogH, width - 2 * sideW, gameH);
 
   // Score tracker top-left inside game box
   fill(255);
   textAlign(LEFT, TOP);
-  if (gameState === "game") text("Score: " + score, 10, dialogH + 10);
+  if (gameState === "game") text("Score: " + score, sideW + 10, dialogH + 10);
 
   // BOTTOM: controller box (always visible)
-  fill(20);
+  fill(30);
   rect(0, dialogH + gameH, width, controlH);
 
   // Dialog typing update (non-blocking)
@@ -221,7 +232,7 @@ if (showContinueArrow && dialogState === "waiting") {
     showGameOver(dialogH);
   }
 
-  // If queue has lines and nothing is typing, start next automatically (visible in top box)
+  // If queue has lines and nothing is typing, start next automatically
   if (dialogState === "idle" && dialogQueue.length > 0) {
     startTypingNext();
   }
@@ -231,6 +242,7 @@ if (showContinueArrow && dialogState === "waiting") {
     createChoiceButtons();
   }
 }
+
 
 function setCornerImage(name) {
   if (cornerImages[name]) {
@@ -318,21 +330,32 @@ function handleClickOrTouch() {
 // ---------------- Choice UI ----------------
 function createChoiceButtons() {
   if (yesBtn || noBtn) return;
-  let dialogH = height * 0.25;
   let btnH = 36;
-  let btnY = dialogH - btnH - 12;
+  let btnY = height - btnH - 20;  // move buttons to bottom of screen
+  let spacing = 10;
+
   yesBtn = createButton("YES");
   noBtn  = createButton("NO");
-  yesBtn.position(width/2 - 60, btnY);
-  noBtn.position(width/2 + 10, btnY);
+
+  // center buttons horizontally
+  let totalW = 100 * 2 + spacing; // two buttons of width 100 + spacing
+  let startX = width/2 - totalW/2;
+
+  yesBtn.position(startX, btnY);
+  yesBtn.size(100, btnH);
+  noBtn.position(startX + 100 + spacing, btnY);
+  noBtn.size(100, btnH);
+
   yesBtn.style("font-size","16px");
   noBtn.style("font-size","16px");
+
   yesBtn.mousePressed(() => { clearChoiceButtons(); startGame(); });
   yesBtn.touchStarted(() => { clearChoiceButtons(); startGame(); return false; });
 
   noBtn.mousePressed(() => { clearChoiceButtons(); declineGame(); });
   noBtn.touchStarted(() => { clearChoiceButtons(); declineGame(); return false; });
 }
+
 function clearChoiceButtons() {
   if (yesBtn) { yesBtn.remove(); yesBtn = null; }
   if (noBtn)  { noBtn.remove();  noBtn = null;  }
@@ -463,29 +486,37 @@ function playGame(dialogH, gameH, controlH) {
 } // [CHANGE] End milestoneChoiceActive check
 
   // joystick draw & input
-if (!milestoneChoiceActive) { // [CHANGE] Only run joystick & movement if no milestone choice is active
-
+// joystick draw & input
+if (!milestoneChoiceActive) {
   let cx = width/2;
   let cy = dialogH + gameH + controlH/2;
+
   fill(80); ellipse(cx, cy, joystickSize*2);
   fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
 
+  // update joystick values based on input
   if (mouseIsPressed && mouseY > dialogH + gameH) {
     let dx = mouseX - cx;
     let dy = mouseY - cy;
     let mag = sqrt(dx*dx + dy*dy);
-    if (mag > 0) {
-      joyX = constrain(dx/joystickSize, -1, 1);
-      joyY = constrain(dy/joystickSize, -1, 1);
+    if (mag > joystickSize) {
+      dx = dx / mag * joystickSize;
+      dy = dy / mag * joystickSize;
     }
+
+    // set normalized joystick values (-1 to 1)
+    joyX = dx / joystickSize;
+    joyY = dy / joystickSize;
   } else {
-    joyX = 0; joyY = 0;
+    joyX = 0;
+    joyY = 0;
   }
 
+  // move player smoothly in game space
   player.x += joyX * playerSpeed;
   player.y += joyY * playerSpeed;
+}
 
-} // [CHANGE] End milestoneChoiceActive check
 }
 
 // ---------------- Milestones (non-blocking) ----------------
