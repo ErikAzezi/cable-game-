@@ -431,8 +431,27 @@ function playGame(dialogH, gameH, controlH) {
 
 
   // draw player
-  fill(255);
-  ellipse(player.x, player.y, player.size);
+ push();
+translate(player.x, player.y);
+fill(255);
+noStroke();
+
+// half-circle base, flat side on top, taller height
+let arcWidth = player.size;          // same width
+let arcHeight = player.size * 1.0;   // doubled height
+arc(0, 0, arcWidth, arcHeight, 0, PI, CHORD);
+
+// prongs on top
+let prongWidth = player.size * 0.2;
+let prongHeight = player.size * 0.25;
+
+// left prong
+rect(-prongWidth - 2, -prongHeight, prongWidth, prongHeight);
+
+// right prong
+rect(2, -prongHeight, prongWidth, prongHeight);
+
+pop();
 
   // spawn arrows
   if (!milestoneChoiceActive) { // Pause arrows when choice is active
