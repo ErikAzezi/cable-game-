@@ -457,131 +457,111 @@ function declineGame() {
 
 // ---------------- Game logic ----------------
 function playGame(dialogH, gameH, controlH) {
-    let sideW = 30; // same as in draw()
+  let sideW = 30; // same as in draw()
+
   // constrain player to game box
   player.x = constrain(player.x, sideW + player.size/2, width - sideW - player.size/2);
   player.y = constrain(player.y, dialogH + player.size/2, dialogH + gameH - player.size/2);
 
-
   // draw player
-push();
-translate(player.x, player.y);
-fill(255);
-noStroke();
+  push();
+  translate(player.x, player.y);
+  fill(255);
+  noStroke();
 
-// half-circle base, flat side on top, taller height
-let arcWidth = player.size * 0.7;    // reduced width
-let arcHeight = player.size * 1.0;   // same doubled height
-arc(0, 0, arcWidth, arcHeight, 0, PI, CHORD);
+  // half-circle base, flat side on top
+  let arcWidth = player.size * 0.7;
+  let arcHeight = player.size * 1.0;
+  arc(0, 0, arcWidth, arcHeight, 0, PI, CHORD);
 
-// prongs on top
-let prongWidth = player.size * 0.2;
-let prongHeight = player.size * 0.25;
-
-// left prong
-rect(-prongWidth - 2, -prongHeight, prongWidth, prongHeight);
-
-// right prong
-rect(2, -prongHeight, prongWidth, prongHeight);
-
-pop();
+  // prongs on top
+  let prongWidth = player.size * 0.2;
+  let prongHeight = player.size * 0.25;
+  rect(-prongWidth - 2, -prongHeight, prongWidth, prongHeight); // left prong
+  rect(2, -prongHeight, prongWidth, prongHeight);               // right prong
+  pop();
 
   // spawn arrows
-  if (!milestoneChoiceActive) { // Pause arrows when choice is active
-  // spawn arrows
-  let spawnInterval = max(10, 40 - floor(score / 2));
-  if (frameCount % spawnInterval === 0) spawnArrow(dialogH, gameH);
-}
+  if (!milestoneChoiceActive) {
+    let spawnInterval = max(10, 40 - floor(score / 2));
+    if (frameCount % spawnInterval === 0) spawnArrow(dialogH, gameH);
+  }
 
   // update arrows
- if (!milestoneChoiceActive) { // Pause arrow movement & collisions during milestone choice
-  for (let i = arrows.length - 1; i >= 0; i--) {
-    let a = arrows[i];
-    fill(a.color);
-    push();
-    translate(a.x, a.y);
-    rotate(atan2(a.dy, a.dx));
-    let arrowLength = 10; // tip-to-base
-    let arrowWidth  = 4;  // half-height
-    triangle(0, 0, -arrowLength, -arrowWidth, -arrowLength, arrowWidth);
-    pop();
+  if (!milestoneChoiceActive) {
+    for (let i = arrows.length - 1; i >= 0; i--) {
+      let a = arrows[i];
 
-    // Zigzag motion
-    if (a.zigzag) {
-      if (abs(a.dx) > abs(a.dy)) {
-        a.y += sin(frameCount * a.zigFrequency + a.zigPhase) * a.zigAmplitude * 0.1;
-      } else {
-        a.x += sin(frameCount * a.zigFrequency + a.zigPhase) * a.zigAmplitude * 0.1;
+      // regular movement
+      a.x += a.dx * arrowSpeed;
+      a.y += a.dy * arrowSpeed;
+
+      // zigzag motion
+      if (a.zigzag) {
+        if (abs(a.dx) > abs(a.dy)) {
+          a.y += sin(frameCount * a.zigFrequency + a.zigPhase) * a.zigAmplitude * 0.1;
+        } else {
+          a.x += sin(frameCount * a.zigFrequency + a.zigPhase) * a.zigAmplitude * 0.1;
+        }
+      }
+
+      // constrain arrow within game box
+      let topY = dialogH + padding;
+      let bottomY = dialogH + gameH - padding;
+      let leftX = sideW + padding;
+      let rightX = width - sideW - padding;
+
+      if (a.x < leftX || a.x > rightX || a.y < topY || a.y > bottomY) {
+        arrows.splice(i, 1);
+        continue; // skip drawing/collision for removed arrow
+      }
+
+      // draw arrow
+      fill(a.color);
+      push();
+      translate(a.x, a.y);
+      rotate(atan2(a.dy, a.dx));
+      let arrowLength = 10;
+      let arrowWidth = 4;
+      triangle(0, 0, -arrowLength, -arrowWidth, -arrowLength, arrowWidth);
+      pop();
+
+      // collision with player
+      let d = dist(player.x, player.y, a.x, a.y);
+      if (d < player.size/2 + 4) {
+        if (a.good) {
+          score++;
+          arrows.splice(i, 1);
+          arrowSpeed = min(arrowSpeed + 0.03, 2);
+          checkMilestones();
+        } else {
+          gameState = "gameOver";
+          setCornerImage("death");
+          dialogQueue = [];
+          typedText = "";
+          currentDialogText = "";
+          dialogState = "idle";
+          let index = min(deathCount, deathDialogs.length - 1);
+          pushDialogLines(deathDialogs[index]);
+          deathCount++;
+        }
       }
     }
-
-    // -- Spawn purple vertical swipe line at score >= 20 --
-if (score >= 20 && purpleLineCooldown <= 0) {
-
-  if (random() < 0.02) {   // spawn chance each frame
-    spawnPurpleLine(dialogH, gameH);
-    purpleLineCooldown = 200; // cooldown frames before next spawn
   }
-
-} else {
-  purpleLineCooldown--;
-}
-
-
-    // regular movement
-    a.x += a.dx * arrowSpeed;
-    a.y += a.dy * arrowSpeed;
-
-    let arrowHitRadius = 4; // same as arrowWidth
-    let d = dist(player.x, player.y, a.x, a.y);
-    
-    if (d < player.size/2 + arrowHitRadius) {
-
-    if (d < player.size/2 + 8) {
-      if (a.good) {
-        score++;
-        arrows.splice(i,1);
-        arrowSpeed += 0.03;
-        arrowSpeed = min(arrowSpeed, 2.0);  // max speed 2.0
-        checkMilestones();
-      } else {
-        gameState = "gameOver";
-        setCornerImage("death");
-        dialogQueue = [];
-        typedText = "";
-        currentDialogText = "";
-        dialogState = "idle";
-        let index = min(deathCount, deathDialogs.length - 1);
-        pushDialogLines(deathDialogs[index]);
-        deathCount++;
-      }
-    }
-
-    if (a.x < sideW - padding || a.x > width - sideW + padding || a.y < dialogH + padding || a.y > dialogH + gameH - padding) {
-  arrows.splice(i, 1);
-}
-    
-  }
-} // [CHANGE] End milestoneChoiceActive check
 
   // joystick draw & input
-// joystick draw & input
-if (!milestoneChoiceActive) {
-  let cx = width/2;
-  let cy = dialogH + gameH + controlH/2;
+  if (!milestoneChoiceActive) {
+    let cx = width / 2;
+    let cy = dialogH + gameH + controlH / 2;
+    fill(80); ellipse(cx, cy, joystickSize * 2);
+    fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
 
-  fill(80); ellipse(cx, cy, joystickSize*2);
-  fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
-
-  // update joystick values based on input
-
-  // move player smoothly in game space
-  player.x += joyX * playerSpeed;
-  player.y += joyY * playerSpeed;
+    // move player smoothly in game space
+    player.x += joyX * playerSpeed;
+    player.y += joyY * playerSpeed;
+  }
 }
 
-}
-}
 
 function touchStarted() {
   let dialogH = height * 0.25;
