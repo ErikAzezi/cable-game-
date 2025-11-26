@@ -112,12 +112,31 @@ function preload() {
 
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  let w = document.documentElement.clientWidth;
+  let h = document.documentElement.clientHeight;
+  createCanvas(w, h);
+
+
+  dialogH = height * 0.22;
+  gameH   = height * 0.58;
+  controlH = height * 0.20;
+
   currentCornerImage = cornerImages.default;
   textAlign(LEFT, TOP);
   textSize(18);
   noStroke();
   startTypingNext(); // begin initial dialog
+}
+
+function windowResized() {
+  let w = document.documentElement.clientWidth;
+  let h = document.documentElement.clientHeight;
+  resizeCanvas(w, h);
+
+  // Recalculate layout again after resize/orientation change
+  dialogH = height * 0.22;
+  gameH   = height * 0.58;
+  controlH = height * 0.20;
 }
 
 function draw() {
