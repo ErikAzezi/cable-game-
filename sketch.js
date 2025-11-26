@@ -146,13 +146,8 @@ function setup() {
 }
 
 function windowResized() {
-  const vp = getViewportSize();
-  resizeCanvas(vp.w, vp.h);
-
-  // Recalculate layout again after resize/orientation change
-  dialogH = height * 0.22;
-  gameH   = height * 0.48;
-  controlH = height * 0.30;
+  // resize canvas to full viewport
+  resizeCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
