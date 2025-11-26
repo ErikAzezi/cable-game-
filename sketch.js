@@ -704,6 +704,8 @@ function resetGame() {
   dialogState = "idle";
   showContinueArrow = false;
   showChoice = false;
+  enableZigzagArrows = false;   // <--- reset zigzag arrows
+  milestoneChoiceActive = false;
   clearChoiceButtons();
   gameState = "dialog";
   setCornerImage("default");  
