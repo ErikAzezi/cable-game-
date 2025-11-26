@@ -1,18 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Full-Screen Game</title>
 
-    <title>Document</title>
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    
-    <link rel="stylesheet" href="style.css">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <!-- p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+
+  <!-- Link to your CSS -->
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* Make everything full-screen, remove margins/padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;        /* prevent scrollbars */
+      background: #000;        /* match your canvas background */
+    }
+
+    canvas {
+      display: block;          /* removes inline gaps */
+      position: absolute;      /* fills screen */
+      top: 0;
+      left: 0;
+    }
+  </style>
 </head>
-
 <body>
-    <script src="sketch.js"></script>
+  <!-- Your game code -->
+  <script src="sketch.js"></script>
 </body>
 </html>
