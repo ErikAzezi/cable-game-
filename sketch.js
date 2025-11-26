@@ -9,7 +9,7 @@ let milestoneChoiceActive = false;
 let currentMilestone = 0;
 let milestoneButtons = [];
 let deathDialogs = [
-  ["BRO, that is clearly my nose, be careful. Touch the screen to try again"],
+  ["BRO, that is clearly my nose, be careful."],
   ["Okay okay… what part of DO NOT PLUG INTO MY NOSE* you dont understand?"],
   ["You know, this can damage me right?"],
   ["Look, I will dumb this down for you since you dont get it, AVOID THE RED ARROWS"],
@@ -147,7 +147,19 @@ if (currentCornerImage) {
 }
 
 // Draw text slightly to the left
-text(typedText, textMargin, 20, textW, dialogH - 40);
+textSize(min(18, dialogH / 8));
+
+let textBoxHeight = dialogH * 0.9;
+let lineH = 22;
+let maxLines = floor(textBoxHeight / lineH);
+
+let lines = typedText.split("\n");
+if (lines.length > maxLines) {
+  lines = lines.slice(0, maxLines);
+  typedText = lines.join("\n");
+}
+
+text(typedText, textMargin, 20, textW, textBoxHeight);
 
 // Continue arrow logic
 if (showContinueArrow && dialogState === "waiting") {
