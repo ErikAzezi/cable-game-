@@ -504,42 +504,6 @@ pop();
     triangle(0, 0, -20, -8, -20, 8);
     pop();
 
-    // Draw and move purple lines
-for (let j = purpleLines.length - 1; j >= 0; j--) {
-  let line = purpleLines[j];
-  fill(150, 0, 200, 180); // semi-transparent purple
-  noStroke();
-  rect(line.x, line.y, line.w, line.h);
-
-  // Move line
-  line.x += line.speed;
-
-  // Check collision with player
-  if (
-    player.x + player.size/2 > line.x &&
-    player.x - player.size/2 < line.x + line.w &&
-    player.y + player.size/2 > line.y &&
-    player.y - player.size/2 < line.y + line.h
-  ) {
-    playerSlowed = true;
-    slowTimer = 60; // slows for 60 frames (~1 second at 60fps)
-  }
-
-  // Remove if off-screen
-    if (line.x > width || line.x + line.w < 0) {
-    purpleLines.splice(j, 1);
-  }
-}
-
-// Handle slowing effect
-if (playerSlowed) {
-  playerSpeed = 3; // slow down
-  slowTimer--;
-  if (slowTimer <= 0) {
-    playerSlowed = false;
-    playerSpeed = 8; // back to normal
-  }
-}
     // Zigzag motion
     if (a.zigzag) {
       if (abs(a.dx) > abs(a.dy)) {
@@ -551,12 +515,15 @@ if (playerSlowed) {
 
     // -- Spawn purple vertical swipe line at score >= 20 --
 if (score >= 20 && purpleLineCooldown <= 0) {
-    if (random() < 0.02) spawnPurpleLine(dialogH, gameH);
-    purpleLineCooldown = 200;
-} else if (score >= 20 && purpleLineCooldown > 0) {
-    purpleLineCooldown--;
-}
 
+  if (random() < 0.02) {   // spawn chance each frame
+    spawnPurpleLine(dialogH, gameH);
+    purpleLineCooldown = 200; // cooldown frames before next spawn
+  }
+
+} else {
+  purpleLineCooldown--;
+}
 
 
     // regular movement
@@ -785,9 +752,5 @@ function resetGame() {
   gameState = "dialog";
   setCornerImage("default");  
   startTypingNext();
-  purpleLines = [];
-  purpleLineCooldown = 0;
-  playerSlowed = false;
-  slowTimer = 0;
 }
  
