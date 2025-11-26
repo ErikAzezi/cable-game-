@@ -152,9 +152,9 @@ function windowResized() {
 
 function draw() {
   background(0);
-  let dialogH = height * 0.22;
-  let gameH = height * 0.48;
-  let controlH = height * 0.30;
+  let dialogH = height * 0.25;
+  let gameH = height * 0.50;
+  let controlH = height * 0.25;
   let sideW = 30; // width of the side frames
 
   // TOP: dialog box (always visible)
