@@ -505,8 +505,8 @@ pop();
     pop();
 
     // Draw and move purple lines
-for (let i = purpleLines.length - 1; i >= 0; i--) {
-  let line = purpleLines[i];
+for (let j = purpleLines.length - 1; j >= 0; j--) {
+  let line = purpleLines[j];
   fill(150, 0, 200, 180); // semi-transparent purple
   noStroke();
   rect(line.x, line.y, line.w, line.h);
@@ -526,8 +526,8 @@ for (let i = purpleLines.length - 1; i >= 0; i--) {
   }
 
   // Remove if off-screen
-  if (line.x > width || line.x + line.w < 0) {
-    purpleLines.splice(i, 1);
+    if (line.x > width || line.x + line.w < 0) {
+    purpleLines.splice(j, 1);
   }
 }
 
@@ -551,7 +551,7 @@ if (playerSlowed) {
 
     // -- Spawn purple vertical swipe line at score >= 20 --
 if (score >= 20 && purpleLineCooldown <= 0) {
-    if (random() < 0.02) spawnPurpleLine(...);
+    if (random() < 0.02) spawnPurpleLine(dialogH, gameH);
     purpleLineCooldown = 200;
 } else if (score >= 20 && purpleLineCooldown > 0) {
     purpleLineCooldown--;
