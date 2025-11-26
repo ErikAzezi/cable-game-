@@ -193,13 +193,32 @@ function draw() {
   let textBoxHeight = dialogH * 0.9;
   let maxLines = floor(textBoxHeight / lineH);
 
-  let displayLines = typedText.split("\n");
-  if (displayLines.length > maxLines) displayLines = displayLines.slice(0, maxLines);
-
-  textAlign(LEFT, TOP);
-  for (let i = 0; i < displayLines.length; i++) {
-  text(displayLines[i], textMargin, 10 + i * lineH, textW, lineH);
+ // Word-wrap typedText manually
+let displayLines = [];
+let words = typedText.split(' ');
+let line = '';
+for (let i = 0; i < words.length; i++) {
+  let testLine = line + words[i] + ' ';
+  let testWidth = textWidth(testLine);
+  if (testWidth > textW) {  // if adding the next word exceeds text box width
+    displayLines.push(line); // commit current line
+    line = words[i] + ' ';   // start new line
+  } else {
+    line = testLine;          // keep building current line
+  }
 }
+
+displayLines.push(line); // add last line
+
+// Clamp to maximum number of lines
+if (displayLines.length > maxLines) displayLines = displayLines.slice(0, maxLines);
+
+// Draw text
+textAlign(LEFT, TOP);
+for (let i = 0; i < displayLines.length; i++) {
+  text(displayLines[i], textMargin, 20 + i * lineH, textW, lineH);
+}
+
 
 
   // Continue arrow
