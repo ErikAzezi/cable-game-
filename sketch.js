@@ -92,7 +92,7 @@ let padding = 10;
 let player = null;
 let playerSpeed = 5;
 let arrows = [];
-let arrowSpeed = 1;
+let arrowSpeed = 0.8;
 let score = 0;
 
 // --- Controls ---
@@ -440,7 +440,7 @@ function startGame() {
   player = { x: width/2, y: height * 0.25 + (height * 0.55)/2, size: 15 }; 
   arrows = [];
   score = 0;
-  arrowSpeed = 1;
+  arrowSpeed = 0.8;
   milestoneIndex = 0;
   showChoice  = false;
 }
@@ -541,7 +541,8 @@ if (score >= 20 && purpleLineCooldown <= 0) {
       if (a.good) {
         score++;
         arrows.splice(i,1);
-        arrowSpeed += 0.1;
+        arrowSpeed += 0.05;
+        arrowSpeed = min(arrowSpeed, 2.0);  // max speed 2.0
         checkMilestones();
       } else {
         gameState = "gameOver";
@@ -760,7 +761,7 @@ function showGameOver(dialogH) {
 
 function resetGame() {
   arrows = [];
-  arrowSpeed = 3;
+  arrowSpeed = 0.8;
   score = 0;
   milestoneIndex = 0;
   dialogQueue = ["Ready for another try?"];
