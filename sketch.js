@@ -431,14 +431,14 @@ function playGame(dialogH, gameH, controlH) {
 
 
   // draw player
- push();
+push();
 translate(player.x, player.y);
 fill(255);
 noStroke();
 
 // half-circle base, flat side on top, taller height
-let arcWidth = player.size;          // same width
-let arcHeight = player.size * 1.0;   // doubled height
+let arcWidth = player.size * 0.7;    // reduced width
+let arcHeight = player.size * 1.0;   // same doubled height
 arc(0, 0, arcWidth, arcHeight, 0, PI, CHORD);
 
 // prongs on top
