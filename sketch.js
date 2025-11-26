@@ -223,8 +223,7 @@ function draw() {
   // BOTTOM frame (optional, already covered by control area)
 
   // CENTER game screen
-  stroke(242, 135, 57);
-  strokeWeight(4);
+//
   fill(10);
   rect(sideW, dialogH, width - 2 * sideW, gameH);
 
