@@ -370,8 +370,8 @@ function clearChoiceButtons() {
 function createMilestoneButtons(options) {
   milestoneButtons = [];
   let dialogH = height * 0.25;
-  let gameH = height * 0.55;
-  let controlH = height * 0.20;
+  let gameH = height * 0.50;
+  let controlH = height * 0.25;
 
   let btnH = 36;
   let spacingX = 10;
@@ -385,27 +385,31 @@ function createMilestoneButtons(options) {
   let totalSpacingX = (cols + 1) * spacingX;
   let btnW = (width - totalSpacingX) / cols;
 
-  // start positions
-  let startX = spacingX;
-  let startY = dialogH + gameH + spacingY; // top of control area + margin
+  // **anchor buttons to the control area (bottom)**
+  let startY = dialogH + gameH + spacingY; // top of control area
+  let maxY = dialogH + gameH + controlH - btnH - spacingY; // bottom margin inside control area
 
   for (let i = 0; i < options.length; i++) {
     let col = i % cols;
     let row = floor(i / cols);
 
-    let btnX = startX + col * (btnW + spacingX);
+    let btnX = spacingX + col * (btnW + spacingX);
     let btnY = startY + row * (btnH + spacingY);
+
+    // ensure buttons never go below control area
+    if (btnY > maxY) btnY = maxY - (row * (btnH + spacingY));
 
     let btn = createButton(options[i]);
     btn.position(btnX, btnY);
     btn.size(btnW, btnH);
-    btn.style("font-size", "14px"); // smaller font to fit text
+    btn.style("font-size", "14px");
     btn.mousePressed(() => milestoneChoiceSelected(i));
     btn.touchStarted(() => { milestoneChoiceSelected(i); return false; });
 
     milestoneButtons.push(btn);
   }
 }
+
 
 function milestoneChoiceSelected(index) {
   // Remove buttons
@@ -437,11 +441,12 @@ function startGame() {
 
 function declineGame() {
   clearChoiceButtons();
-  pushDialogLines(["Yeah, I dont think so."]);
-  if (dialogState !== "typing") {
-    dialogState = "idle";
-    startTypingNext();
-  }
+  dialogQueue = ["Yeah, I don't think so."]; // reset queue to only this line
+  typedText = "";
+  charIndex = 0;
+  dialogState = "idle"; // force idle so startTypingNext runs
+  showContinueArrow = false;
+  startTypingNext();     // immediately start typing
 }
 
 // ---------------- Game logic ----------------
