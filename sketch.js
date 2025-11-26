@@ -22,6 +22,10 @@ let deathDialogs = [
   ["I cant see, I cant feel, what are you doing to me."],
 ];
 let enableZigzagArrows = false;
+let draggingJoystick = false;
+let dragId = null; // track the pointer/finger
+let dragStartX = 0;
+let dragStartY = 0;
 
 let milestoneChoices = {
   5: {
@@ -495,22 +499,6 @@ if (!milestoneChoiceActive) {
   fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
 
   // update joystick values based on input
-  if (mouseIsPressed && mouseY > dialogH + gameH) {
-    let dx = mouseX - cx;
-    let dy = mouseY - cy;
-    let mag = sqrt(dx*dx + dy*dy);
-    if (mag > joystickSize) {
-      dx = dx / mag * joystickSize;
-      dy = dy / mag * joystickSize;
-    }
-
-    // set normalized joystick values (-1 to 1)
-    joyX = dx / joystickSize;
-    joyY = dy / joystickSize;
-  } else {
-    joyX = 0;
-    joyY = 0;
-  }
 
   // move player smoothly in game space
   player.x += joyX * playerSpeed;
@@ -519,6 +507,52 @@ if (!milestoneChoiceActive) {
 
 }
 
+function touchStarted() {
+  // check if touch started in joystick area
+  let cx = width/2;
+  let cy = layout.gameBottom + layout.controlH/2;
+  let dx = mouseX - cx;
+  let dy = mouseY - cy;
+  if (sqrt(dx*dx + dy*dy) <= joystickSize*2) {
+    draggingJoystick = true;
+    dragId = touches.length ? touches[0].id : 'mouse';
+    dragStartX = mouseX;
+    dragStartY = mouseY;
+    return false; // prevent scroll
+  }
+}
+
+function touchMoved() {
+  if (draggingJoystick) {
+    let cx = width/2;
+    let cy = layout.gameBottom + layout.controlH/2;
+
+    let dx = mouseX - cx;
+    let dy = mouseY - cy;
+
+    // constrain handle visually
+    let mag = sqrt(dx*dx + dy*dy);
+    if (mag > joystickSize) {
+      dx = dx / mag * joystickSize;
+      dy = dy / mag * joystickSize;
+    }
+
+    // normalized movement values
+    joyX = dx / joystickSize;
+    joyY = dy / joystickSize;
+    
+    return false; // prevent scroll
+  }
+}
+
+function touchEnded() {
+  if (draggingJoystick) {
+    draggingJoystick = false;
+    dragId = null;
+    joyX = 0;
+    joyY = 0;
+  }
+}
 // ---------------- Milestones (non-blocking) ----------------
 function checkMilestones() {
   while (milestoneIndex < scoreMilestones.length) {
