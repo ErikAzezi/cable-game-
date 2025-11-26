@@ -90,7 +90,7 @@ let padding = 10;
 
 // --- Game ---
 let player = null;
-let playerSpeed = 8
+let playerSpeed = 5;
 let arrows = [];
 let arrowSpeed = 1;
 let score = 0;
@@ -631,8 +631,23 @@ function touchMoved() {
   }
 
   // Update normalized joystick values
-  joyX = dx / joystickSize;
-  joyY = dy / joystickSize;
+  let deadzone = 0.1; // small movements ignored
+let sensitivity = 0.7; // scale input down
+
+joyX = dx / joystickSize;
+joyY = dy / joystickSize;
+
+// clamp between -1 and 1
+joyX = constrain(joyX, -1, 1);
+joyY = constrain(joyY, -1, 1);
+
+// apply deadzone
+if (abs(joyX) < deadzone) joyX = 0;
+if (abs(joyY) < deadzone) joyY = 0;
+
+// scale response
+joyX *= sensitivity;
+joyY *= sensitivity;
 
   return false; // prevent scroll
 }
