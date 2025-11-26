@@ -8,6 +8,7 @@ let deathCount = 0;
 let milestoneChoiceActive = false;
 let currentMilestone = 0;
 let milestoneButtons = [];
+
 let deathDialogs = [
   ["BRO, that is clearly my nose, be careful."],
   ["Okay okay… what part of DO NOT PLUG INTO MY NOSE* you dont understand?"],
@@ -21,11 +22,16 @@ let deathDialogs = [
   ["This is fine. I’m fine. Everything is fine. HAHAHA.... wait, hello?"],
   ["I cant see, I cant feel, what are you doing to me."],
 ];
+
 let enableZigzagArrows = false;
 let draggingJoystick = false;
 let dragId = null; // track the pointer/finger
 let dragStartX = 0;
 let dragStartY = 0;
+let purpleLines = [];
+let purpleLineCooldown = 0;
+let playerSlowed = false;
+let slowTimer = 0;
 
 let milestoneChoices = {
   5: {
@@ -70,7 +76,7 @@ let dialogQueue = [
   "Hey there! who is there..? ⚡",
   "You call that a name? Definitely not as cool as mine.",
   "Call me Cable, I need you to help me charge all the appliances in this warehouse!",
-  "But DO NOT plug my cable to my nose please, The last person did that and I am still dizzy from that."
+  "But DO NOT plug the cable to my nose, someone did that earlier and it hurt a lot. "
 ];
 let currentDialogText = "";
 let typedText = "";
@@ -498,6 +504,42 @@ pop();
     triangle(0, 0, -20, -8, -20, 8);
     pop();
 
+    // Draw and move purple lines
+for (let i = purpleLines.length - 1; i >= 0; i--) {
+  let line = purpleLines[i];
+  fill(150, 0, 200, 180); // semi-transparent purple
+  noStroke();
+  rect(line.x, line.y, line.w, line.h);
+
+  // Move line
+  line.x += line.speed;
+
+  // Check collision with player
+  if (
+    player.x + player.size/2 > line.x &&
+    player.x - player.size/2 < line.x + line.w &&
+    player.y + player.size/2 > line.y &&
+    player.y - player.size/2 < line.y + line.h
+  ) {
+    playerSlowed = true;
+    slowTimer = 60; // slows for 60 frames (~1 second at 60fps)
+  }
+
+  // Remove if off-screen
+  if (line.x > width || line.x + line.w < 0) {
+    purpleLines.splice(i, 1);
+  }
+}
+
+// Handle slowing effect
+if (playerSlowed) {
+  playerSpeed = 3; // slow down
+  slowTimer--;
+  if (slowTimer <= 0) {
+    playerSlowed = false;
+    playerSpeed = 8; // back to normal
+  }
+}
     // Zigzag motion
     if (a.zigzag) {
       if (abs(a.dx) > abs(a.dy)) {
@@ -506,6 +548,16 @@ pop();
         a.x += sin(frameCount * a.zigFrequency + a.zigPhase) * a.zigAmplitude * 0.1;
       }
     }
+
+    // -- Spawn purple vertical swipe line at score >= 20 --
+if (score >= 20 && purpleLineCooldown <= 0) {
+    if (random() < 0.02) spawnPurpleLine(...);
+    purpleLineCooldown = 200;
+} else if (score >= 20 && purpleLineCooldown > 0) {
+    purpleLineCooldown--;
+}
+
+
 
     // regular movement
     a.x += a.dx * a.speed;
@@ -686,6 +738,30 @@ function spawnArrow(dialogH, gameH) {
 
   arrows.push(a);
 }
+
+function spawnPurpleLine(dialogH, gameH) {
+
+  let attachedTop = random() < 0.5;   // top or bottom
+  let fromLeft = random() < 0.5;      // entering left or right
+
+  let lineHeight = gameH / 2;
+
+  let y = attachedTop ? dialogH : dialogH + gameH - lineHeight;
+  let x = fromLeft ? 0 : width;
+
+  // speed: slow (can adjust later)
+  let speed = fromLeft ? 3 : -3;
+
+  purpleLines.push({
+    x: x,
+    y: y,
+    w: 4,          // thickness of the line
+    h: lineHeight,
+    speed: speed,
+    attachedTop: attachedTop
+  });
+}
+
 // ---------------- GameOver ----------------
 function showGameOver(dialogH) {
   fill(255);
@@ -709,5 +785,9 @@ function resetGame() {
   gameState = "dialog";
   setCornerImage("default");  
   startTypingNext();
+  purpleLines = [];
+  purpleLineCooldown = 0;
+  playerSlowed = false;
+  slowTimer = 0;
 }
  
