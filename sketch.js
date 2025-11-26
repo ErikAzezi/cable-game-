@@ -440,7 +440,7 @@ function startGame() {
   player = { x: width/2, y: height * 0.25 + (height * 0.55)/2, size: 15 }; 
   arrows = [];
   score = 0;
-  arrowSpeed = 3;
+  arrowSpeed = 1;
   milestoneIndex = 0;
   showChoice  = false;
 }
@@ -541,7 +541,7 @@ if (score >= 20 && purpleLineCooldown <= 0) {
       if (a.good) {
         score++;
         arrows.splice(i,1);
-        arrowSpeed += 0.2;
+        arrowSpeed += 0.1;
         checkMilestones();
       } else {
         gameState = "gameOver";
