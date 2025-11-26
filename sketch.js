@@ -368,23 +368,47 @@ function clearChoiceButtons() {
 
 
 function createMilestoneButtons(options) {
+  // Remove any existing buttons first
+  for (let b of milestoneButtons) b.remove();
   milestoneButtons = [];
+
   let dialogH = height * 0.25;
-  let btnH = 36;
   let gameH = height * 0.55;
   let controlH = height * 0.20;
-  let btnY = dialogH + gameH + controlH/2 - btnH/2;
-  let spacing = 10;
-  let totalW = options.length * 100 + (options.length - 1) * spacing;
-  let startX = width/2 - totalW/2;
+
+  let btnH = 40; // button height
+  let btnW = min(120, width * 0.4); // button width scaled to screen, max 120px
+  let spacingX = 20; // horizontal spacing
+  let spacingY = 15; // vertical spacing
+
+  // Determine grid layout
+  let rows = 2;
+  let cols = ceil(options.length / rows);
+
+  // Center grid inside the control/game area
+  let totalGridWidth = cols * btnW + (cols - 1) * spacingX;
+  let totalGridHeight = rows * btnH + (rows - 1) * spacingY;
+
+  let startX = width/2 - totalGridWidth/2;
+  let startY = dialogH + gameH/2 - totalGridHeight/2; // roughly middle of game area
 
   for (let i = 0; i < options.length; i++) {
+    let row = floor(i / cols);
+    let col = i % cols;
+
+    let x = startX + col * (btnW + spacingX);
+    let y = startY + row * (btnH + spacingY);
+
     let btn = createButton(options[i]);
-    btn.position(startX + i*110, btnY);
-    btn.size(100, btnH);
+    btn.position(x, y);
+    btn.size(btnW, btnH);
     btn.style("font-size", "16px");
+    btn.style("overflow", "hidden"); // ensure text stays inside button
+    btn.style("white-space", "normal"); // wrap text if needed
+
     btn.mousePressed(() => milestoneChoiceSelected(i));
     btn.touchStarted(() => { milestoneChoiceSelected(i); return false; });
+
     milestoneButtons.push(btn);
   }
 }
