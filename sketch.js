@@ -151,15 +151,15 @@ function windowResized() {
 
   // Recalculate layout again after resize/orientation change
   dialogH = height * 0.22;
-  gameH   = height * 0.58;
-  controlH = height * 0.20;
+  gameH   = height * 0.48;
+  controlH = height * 0.30;
 }
 
 function draw() {
   background(0);
-  let dialogH = height * 0.25;
-  let gameH = height * 0.55;
-  let controlH = height * 0.20;
+  let dialogH = height * 0.22;
+  let gameH = height * 0.48;
+  let controlH = height * 0.30;
   // TOP: dialog box (always visible)
   fill(30);
   rect(0, 0, width, dialogH);
