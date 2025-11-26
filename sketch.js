@@ -610,23 +610,27 @@ function checkMilestones() {
 
 // ---------------- Arrow spawn ----------------
 function spawnArrow(dialogH, gameH) {
-  let side = floor(random(8));
-  let a = { x:0, y:0, dx:0, dy:0, speed:arrowSpeed, good: random() < 0.2 };
+  let sideW = 30; // same border width as playGame
   let topY = dialogH + padding;
   let bottomY = dialogH + gameH - padding;
+  let leftX = sideW + padding;
+  let rightX = width - sideW - padding;
 
-  if (side === 0) { a.x = 0; a.y = random(topY, bottomY); a.dx = 1; a.dy = 0; }
-  else if (side === 1) { a.x = width; a.y = random(topY, bottomY); a.dx = -1; a.dy = 0; }
-  else if (side === 2) { a.x = random(width); a.y = topY; a.dx = 0; a.dy = 1; }
-  else if (side === 3) { a.x = random(width); a.y = bottomY; a.dx = 0; a.dy = -1; }
-  else if (side === 4) { a.x = 0; a.y = topY; a.dx = 0.7; a.dy = 0.7; }
-  else if (side === 5) { a.x = width; a.y = topY; a.dx = -0.7; a.dy = 0.7; }
-  else if (side === 6) { a.x = 0; a.y = bottomY; a.dx = 0.7; a.dy = -0.7; }
-  else { a.x = width; a.y = bottomY; a.dx = -0.7; a.dy = -0.7; }
+  let side = floor(random(8));
+  let a = { x: 0, y: 0, dx: 0, dy: 0, speed: arrowSpeed, good: random() < 0.2 };
+
+  if (side === 0) { a.x = leftX;  a.y = random(topY, bottomY); a.dx = 1;    a.dy = 0; } // left
+  else if (side === 1) { a.x = rightX; a.y = random(topY, bottomY); a.dx = -1;   a.dy = 0; } // right
+  else if (side === 2) { a.x = random(leftX, rightX); a.y = topY;    a.dx = 0;    a.dy = 1; } // top
+  else if (side === 3) { a.x = random(leftX, rightX); a.y = bottomY; a.dx = 0;    a.dy = -1; } // bottom
+  else if (side === 4) { a.x = leftX;  a.y = topY;    a.dx = 0.7;  a.dy = 0.7; }
+  else if (side === 5) { a.x = rightX; a.y = topY;    a.dx = -0.7; a.dy = 0.7; }
+  else if (side === 6) { a.x = leftX;  a.y = bottomY; a.dx = 0.7;  a.dy = -0.7; }
+  else { a.x = rightX; a.y = bottomY; a.dx = -0.7; a.dy = -0.7; }
 
   a.color = a.good ? color(0,255,0) : color(255,0,0);
 
-  // --- Zigzag feature ---
+  // Zigzag arrows
   if (enableZigzagArrows && random() < 0.5) { 
     a.zigzag = true;
     a.zigAmplitude = random(10, 25);
