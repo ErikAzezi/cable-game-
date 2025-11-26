@@ -663,7 +663,7 @@ function spawnArrow(dialogH, gameH) {
   let rightX = width - sideW - padding;
 
   let side = floor(random(8));
-  let a = { x: 0, y: 0, dx: 0, dy: 0, speed: arrowSpeed, good: random() < 0.2 };
+  let a = { x: 0, y: 0, dx: 0, dy: 0, speed: arrowSpeed, good: random() < 0.3 };
 
   if (side === 0) { a.x = leftX;  a.y = random(topY, bottomY); a.dx = 1;    a.dy = 0; } // left
   else if (side === 1) { a.x = rightX; a.y = random(topY, bottomY); a.dx = -1;   a.dy = 0; } // right
