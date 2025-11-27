@@ -9,12 +9,17 @@ let milestoneChoiceActive = false;
 let currentMilestone = 0;
 let milestoneButtons = [];
 let bgImg;
+let playerImg;
+let zapImgs = [];
+let plugImg;
+let slowEffectImg;
+let batImgs = [];
 
 let deathDialogs = [
-  ["AHH, that is clearly my nose, be careful."],
+  ["OWw, that is clearly my own cord. *facepalm*, please be more careful."],
   ["Okay okay… what part of DO NOT PLUG INTO MY NOSE* you dont understand?"],
   ["You know, this can damage me right?"],
-  ["Look, I will dumb this down for you since you dont get it, AVOID THE RED ARROWS"],
+  ["Look man, if it looks like my cord, AVOID IT."],
   ["Again?? ARE YOU DOING THIS ON PURPOSE."],
   ["My warranty does NOT cover emotional damage."],
   ["I swear you’re trying to send me to cable heaven."],
@@ -38,7 +43,7 @@ let slowTimer = 0;
 let milestoneChoices = {
   5: {
     question: ["Nice, that is 10 percent of all the appliances in the warehouse done."],
-    options: ["Only 10 percent?", "This is really easy", "OK", "Sure"],
+    options: ["Only 10 percent?", "This is really easy", "OK", "I said no earlier"],
     postText: ["I dont really like your attiture but keep going I guess."]
   },
   10: {
@@ -75,10 +80,16 @@ let milestoneChoices = {
 
 // --- Dialog storage (queue-based) ---
 let dialogQueue = [
-  "Hey there! who is there..? ⚡",
-  "You call that a name? Definitely not as cool as mine.",
-  "Call me Cable, I need you to help me charge all the appliances in this warehouse!",
-  "But DO NOT plug the cable to my nose, someone did that earlier and it hurt a lot. "
+  "Hey YOU, what's your name? ⚡",
+  "ok, nice to meet you, I happened to be in a bit of a bind here.",
+  "All the other outlets got damaged except for that one in the corner.",
+  "I need you to help me figure out how to plug all the appliances here through me..",
+  "..so we can get to work!",
+  "You can call me Cable btw..",
+  "Oh, make sure you don't mistake my own cord for an appliance though..",
+  "someone plugged it into my nose earlier and I am still recovering..",
+  "Dont want to get hurt now..haha..",
+  "So, what do you say? Want to help me and my mates out?"
 ];
 let currentDialogText = "";
 let typedText = "";
@@ -120,8 +131,19 @@ function preload() {
   dialogcharacterImg = loadImage("gifproject.GIF");
   cornerImages.default = dialogcharacterImg; 
   cornerImages.death = loadImage("plugnose.PNG");
-  bgImg = loadImage("background2.png"); 
+  bgImg = loadImage("background5.png"); 
+  playerImg = loadImage("playmodel.PNG");
+  zapImgs[0] = loadImage("zap1.PNG");
+  zapImgs[1] = loadImage("zap2.PNG");
+  plugImg = loadImage("plug2.PNG");
+  slowEffectImg = loadImage("purplesloweffect.PNG");
+  batImgs[0] = loadImage("bat1.PNG");   // 0–20%
+  batImgs[3] = loadImage("bat15.PNG");  // 20–40%
+  batImgs[1] = loadImage("bat2.PNG");   // 40–60%
+  batImgs[4] = loadImage("bat25.PNG");  // 60–94%
+  batImgs[2] = loadImage("bat3.PNG");   // 94–100%
 }
+
 
 
 function getViewportSize() {
@@ -173,7 +195,7 @@ function draw() {
   let sideW = 30; // width of the side frames
 
   // TOP: dialog box (always visible)
-  fill(0, 200);
+  fill(0, 120);
   noStroke();
   rect(0, 0, width, dialogH);
   fill(255);
@@ -216,7 +238,7 @@ function draw() {
   }
 
   // MID: game area surrounded by frames
-  fill(0, 200);
+  fill(0, 120);
   rect(0, dialogH, sideW, gameH);              // left frame
   rect(width - sideW, dialogH, sideW, gameH);  // right frame
   // TOP frame (already your dialog, but could add border if needed)
@@ -226,14 +248,41 @@ function draw() {
 //
   fill(10);
   rect(sideW, dialogH, width - 2 * sideW, gameH);
+  
 
   // Score tracker top-left inside game box
   fill(255);
   textAlign(LEFT, TOP);
-  if (gameState === "game") text("Score: " + score, sideW + 10, dialogH + 10);
+  if (gameState === "game") {
+  let percent = score * 2; // 1 → 2%, 2 → 4%, etc.
+  let batteryImg = null;
+
+  if (percent <= 20) batteryImg = batImgs[0];       // bat1.PNG
+  else if (percent <= 40) batteryImg = batImgs[3];  // bat15.PNG
+  else if (percent <= 60) batteryImg = batImgs[1];  // bat2.PNG
+  else if (percent <= 94) batteryImg = batImgs[4];  // bat25.PNG
+  else batteryImg = batImgs[2];                     // bat3.PNG
+
+  if (batteryImg) {
+    let batW = 80;
+    let batH = 30;
+    let batX = sideW + 10;
+    let batY = dialogH + 10;
+
+    image(batteryImg, batX, batY, batW, batH);
+
+    // percentage overlay
+    push();
+    fill(255);
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text(percent + "%", batX + batW / 2, batY + batH / 2);
+    pop();
+  }
+}
 
   // BOTTOM: controller box (always visible)
-  fill(0, 200);
+  fill(0, 120);
   rect(0, dialogH + gameH, width, controlH);
 
   // Dialog typing update (non-blocking)
@@ -451,7 +500,7 @@ function startGame() {
 
 function declineGame() {
   clearChoiceButtons();
-  dialogQueue = ["Yeah, I don't think so."]; // reset queue to only this line
+  dialogQueue = ["I'm going to take that as a yes."]; // reset queue to only this line
   typedText = "";
   charIndex = 0;
   dialogState = "idle"; // force idle so startTypingNext runs
@@ -470,23 +519,22 @@ function playGame(dialogH, gameH, controlH) {
   // draw player
   push();
   translate(player.x, player.y);
-  fill(playerSlowed ? color(128, 0, 255) : color(255));
-  noStroke();
+  imageMode(CENTER); // center the image at player.x, player.y
 
-  let arcWidth = player.size * 0.7;
-  let arcHeight = player.size * 1.0;
-  arc(0, 0, arcWidth, arcHeight, 0, PI, CHORD);
+  if (playerSlowed) {
+  image(slowEffectImg, 0, 0, player.size, player.size);
+  } else {
+  image(playerImg, 0, 0, player.size, player.size);
+  }
 
-  let prongWidth = player.size * 0.2;
-  let prongHeight = player.size * 0.25;
-  rect(-prongWidth - 2, -prongHeight, prongWidth, prongHeight);
-  rect(2, -prongHeight, prongWidth, prongHeight);
   pop();
+
 
   // spawn arrows
   if (!milestoneChoiceActive) {
-    let spawnInterval = max(10, 40 - floor(score / 2));
-    if (frameCount % spawnInterval === 0) spawnArrow(dialogH, gameH);
+   let baseInterval = 40 - floor(score / 2);          // original spawn interval
+   let reducedInterval = max(10, floor(baseInterval * 1.43)); // 30% fewer spawns
+  if (frameCount % reducedInterval === 0) spawnArrow(dialogH, gameH);
   }
 
   // spawn purple lines after milestone 30
@@ -525,12 +573,19 @@ function playGame(dialogH, gameH, controlH) {
         continue;
       }
 
-      fill(a.color);
       push();
       translate(a.x, a.y);
       rotate(atan2(a.dy, a.dx));
-      triangle(0, 0, -10, -4, -10, 4);
+      imageMode(CENTER);
+
+      if (a.good) { 
+      let img = random(zapImgs);
+      image(img, 0, 0, 15, 15);
+      } else { 
+      image(plugImg, 0, 0, 15, 15);
+      }
       pop();
+
 
       let d = dist(player.x, player.y, a.x, a.y);
       if (d < player.size/2 + 4) {
@@ -775,7 +830,7 @@ function resetGame() {
   arrowSpeed = 0.5;
   score = 0;
   milestoneIndex = 0;
-  dialogQueue = ["Ready for another try?"];
+  dialogQueue = ["Eveything short circuited! Start over immediately."]; 
   typedText = "";
   currentDialogText = "";
   dialogState = "idle";
