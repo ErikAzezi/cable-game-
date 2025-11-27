@@ -409,8 +409,16 @@ function createChoiceButtons() {
   noBtn.position(startX + 100 + spacing, btnY);
   noBtn.size(100, btnH);
 
+  yesBtn.style("font-family", "Pixelify Sans");
   yesBtn.style("font-size","16px");
+  yesBtn.style("background-color", "black");
+  yesBtn.style("color", "white");
+
+  noBtn.style("font-family", "Pixelify Sans");
   noBtn.style("font-size","16px");
+  noBtn.style("background-color", "black");
+  noBtn.style("color", "white");
+
 
   yesBtn.mousePressed(() => { clearChoiceButtons(); startGame(); });
   yesBtn.touchStarted(() => { clearChoiceButtons(); startGame(); return false; });
@@ -461,7 +469,13 @@ function createMilestoneButtons(options) {
     let btn = createButton(options[i]);
     btn.position(btnX, btnY);
     btn.size(btnW, btnH);
+    
+
+    btn.style("font-family", "Pixelify Sans");
     btn.style("font-size", "14px");
+    btn.style("color", "#fff");      // optional, to match other text
+    btn.style("background-color", "#000"); // optional
+
     btn.mousePressed(() => milestoneChoiceSelected(i));
     btn.touchStarted(() => { milestoneChoiceSelected(i); return false; });
 
