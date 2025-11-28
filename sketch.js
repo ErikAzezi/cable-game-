@@ -1,5 +1,5 @@
-let gameState = "dialog"; // "dialog" | "game" | "gameOver"
-let dialogState = "idle"; // "idle" | "typing" | "waiting" (for continue) | "choice"
+let gameState = "dialog"; 
+let dialogState = "idle"; 
 let dialogcharacterImg;
 let initialChoiceDone = false;
 let cornerImages = {};
@@ -14,6 +14,14 @@ let zapImgs = [];
 let plugImg;
 let slowEffectImg;
 let batImgs = [];
+let milestoneCharImg; 
+let milestonePostResponseActive = false;
+let milestoneResponsePending = false;
+let milestoneContinueBtn = null;
+let friendlyChoiceCount = 0;   // choices 1 & 2
+let unfriendlyChoiceCount = 0; // choices 3 & 4
+let gameFinished = false;   
+let triggeredMilestones = new Set();
 
 let deathDialogs = [
   ["OWw, that is clearly my own cord. *facepalm*, please be more careful."],
@@ -27,12 +35,13 @@ let deathDialogs = [
   ["Ahhhhhhhhh."],
   ["This is fine. I’m fine. Everything is fine. HAHAHA.... wait, hello?"],
   ["I cant see, I cant feel, what are you doing to me."],
+  ["......"],
 ];
 
 
 let enableZigzagArrows = false;
 let draggingJoystick = false;
-let dragId = null; // track the pointer/finger
+let dragId = null; 
 let dragStartX = 0;
 let dragStartY = 0;
 let purpleLines = [];
@@ -42,39 +51,74 @@ let slowTimer = 0;
 
 let milestoneChoices = {
   5: {
-    question: ["Nice, that is 10 percent of all the appliances in the warehouse done."],
-    options: ["Only 10 percent?", "This is really easy", "OK", "I said no earlier"],
-    postText: ["I dont really like your attiture but keep going I guess."]
+    question: ["Nice, 10 percent, we still have a long way to go though."],
+    options: ["Only 10 percent?", "OK", "I don't like your attitude", "cable is a horribe name"],
+    postResponses: [
+    "I mean, there is a lot of appliances here.",
+    "Whew, keep it up then.",
+    "Well, I don't like yours too then.",
+    "Excuse me? I'm going to ignore you said that."
+    ]
   },
   10: {
-    question: ["that is 20 percent, watch out, some of those arrows appear to be moving differently now."],
-    options: ["Do I have to help you?", "What", "OK", "why is this happening"],
-    postText: ["Keep going, you are doing a decent job."]
+    question: ["AHHH, there is some current spikes, I can't stop shaking... my cord is moving all over the place. "],
+    options: ["what does that even mean?", "OK", "come on, suck it up", "ew"],
+    postResponses: [
+    "It means, my cords are now zigzagging around, can't you see?",
+    "great vocabulary usage there.",
+    "why don't you try getting zapped then?",
+    "why are you saying ew."
+     ]
   },
   15: {
     question: ["that's 30 percent now."],
-    options: ["Stop interupting me", "why are we doing this again", "OK", "Huh"],
-    postText: ["watch out, dont get tangled in those wires now."]
+    options: ["thats halfway there", "we can do this", "OK", "Do you really need me for this?"],
+    postResponses: [
+    "mmmm, more like 3rd of the way there, but ok",
+    "that's what I like to hear",
+    "do you know any other word than OK?",
+    "come on, Focus, we need to get this done before my boss comes back."
+  ]
   },
   20: {
-    question: ["We are half way there now."],
-    options: ["You mean 40 percent", "Your math is bad", "OK", "I'm bored"],
-    postText: ["I don't really care about your math skills."]
-  },
+    question: ["you are doing great, lets keep that up!"],
+    options: ["thanks man, you too", "we got this", "OK", "screw you"],
+    postResponses: [
+    "you are starting to make me blush..",
+    "yeah we do.",
+    "....",
+    "srew you too then"
+     ]
+    },
   30: {
-    question: ["Wow, 45 percent already!"],
-    options: ["This is getting tiring", "Can we stop?", "OK", "math's still not right"],
-    postText: ["Can you stop complaining?"]
+    question: ["Electricity is leaking! those purple lines will slow you down if you touch them."],
+    options: ["why is it purple", "can we take a break", "OK", "you're designed poorly"],
+    postResponses: [
+    "I dont know, maybe its just purple electricity?",
+    "No",
+    "so you understand what I am saying right?",
+    "you look poorly designed too."
+     ]
   },
   40: {
     question: ["80 percent done!"],
-    options: ["Finally", "This is endless", "OK", "When will this end"],
-    postText: ["Just a bit more, you got this!"]
+    options: ["so close", "lets power through", "OK", "stop talking to me"],
+    postResponses: [
+    "hurray!",
+    "just focus, don't lose it now.",
+    "OK",
+    "FINE!"
+     ]
   }, 
   50: {
     question: ["Incredible! that is all of them!"],
-    options: ["Yay...", "can I go now", "OK", "That was fun"],
-    postText: ["Wait who is there?"]
+    options: ["Yay", "Great job", "Bye", "Where is my money"],
+    postResponses: [
+    "you were amazing!",
+    "Great job to you too, my boss will be pleased.",
+    "Bye!",
+    "umm, payment is not really part of my job description.."
+     ]
   }
 };
 
@@ -86,7 +130,7 @@ let dialogQueue = [
   "I need you to help me figure out how to plug all the appliances here through me..",
   "..so we can get to work!",
   "You can call me Cable btw..",
-  "Oh, make sure you don't mistake my own cord for an appliance though..",
+  "Oh, make sure you don't mistake my own cord for an appliances' though..",
   "someone plugged it into my nose earlier and I am still recovering..",
   "Dont want to get hurt now..haha..",
   "So, what do you say? Want to help me and my mates out?"
@@ -116,12 +160,16 @@ let joystickSize = 60;
 // --- Milestones ---
 let scoreMilestones = [
   { score: 1, msgs: ["Oooh look at you~ not bad!"] },
-  { score: 5, msgs: ["Nice, that is 10 percent of all the appliances in the warehouse done."] },
-  { score: 10, msgs: ["that is 20 percent, watch out, some of those arrows appear to be moving differently now."] },
-  { score: 15, msgs: ["that's 30 percent now."] },
+  { score: 5, msgs: ["Keep it up!"] },
+  { score: 7, msgs: ["Nice!"] },
+  { score: 10, msgs: ["n."] },
+  { score: 15, msgs: ["You're doing great!"] },
+  { score: 17, msgs: ["That was slick."] },
   { score: 20, msgs: ["Halfway there!"] },
+  { score: 22, msgs: ["almost halfway, come on now."] },
   { score: 30, msgs: ["Wow, 45 percent already!!"] },
-  { score: 40, msgs: ["80 percent done!"] },
+  { score: 40, msgs: ["Youre on fire!"] },
+  { score: 45, msgs: ["you just need to charge 5 more now!"] },
   { score: 50, msgs: ["Incredible! that is all of them!"] }
 ]; 
 
@@ -142,6 +190,7 @@ function preload() {
   batImgs[1] = loadImage("bat2.PNG");   // 40–60%
   batImgs[4] = loadImage("bat25.PNG");  // 60–94%
   batImgs[2] = loadImage("bat3.PNG");   // 94–100%
+  milestoneCharImg = loadImage("mile1.PNG");
 }
 
 
@@ -187,6 +236,49 @@ function windowResized() {
 }
 
 function draw() {
+
+  // --- Ending screen overlay ---
+  if (gameFinished) { 
+    push();
+    fill(0);
+    rect(0, 0, width, height);
+
+    fill(255);
+    textFont("Pixelify Sans");
+    textSize(min(24, width / 20)); // scale for phone screens
+    textAlign(CENTER, CENTER);
+
+    let wrapWidth = width * 0.8; // wrap at 80% of screen width
+
+    // split text into lines that fit wrapWidth
+    let words = typedText.split(" ");
+    let lines = [];
+    let currentLine = "";
+    for (let word of words) {
+      let testLine = currentLine ? currentLine + " " + word : word;
+      if (textWidth(testLine) > wrapWidth) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    // calculate total height and start Y to center vertically
+    let lineH = textAscent() + textDescent() + 6;
+    let totalH = lines.length * lineH;
+    let startY = height / 2 - totalH / 2;
+
+    // draw each line
+    for (let i = 0; i < lines.length; i++) {
+      text(lines[i], width / 2, startY + i * lineH);
+    }
+
+    pop();
+    return; 
+  }
+
   image(bgImg, 0, 0, width, height);
 
   let dialogH = height * 0.25;
@@ -241,45 +333,41 @@ function draw() {
   fill(0, 120);
   rect(0, dialogH, sideW, gameH);              // left frame
   rect(width - sideW, dialogH, sideW, gameH);  // right frame
-  // TOP frame (already your dialog, but could add border if needed)
-  // BOTTOM frame (optional, already covered by control area)
 
   // CENTER game screen
-//
   fill(10);
   rect(sideW, dialogH, width - 2 * sideW, gameH);
-  
 
   // Score tracker top-left inside game box
   fill(255);
   textAlign(LEFT, TOP);
   if (gameState === "game") {
-  let percent = score * 2; // 1 → 2%, 2 → 4%, etc.
-  let batteryImg = null;
+    let percent = score * 2; // 1 → 2%, 2 → 4%, etc.
+    let batteryImg = null;
 
-  if (percent <= 20) batteryImg = batImgs[0];       // bat1.PNG
-  else if (percent <= 40) batteryImg = batImgs[3];  // bat15.PNG
-  else if (percent <= 60) batteryImg = batImgs[1];  // bat2.PNG
-  else if (percent <= 94) batteryImg = batImgs[4];  // bat25.PNG
-  else batteryImg = batImgs[2];                     // bat3.PNG
+    if (percent <= 20) batteryImg = batImgs[0];       // bat1.PNG
+    else if (percent <= 40) batteryImg = batImgs[3];  // bat15.PNG
+    else if (percent <= 60) batteryImg = batImgs[1];  // bat2.PNG
+    else if (percent <= 94) batteryImg = batImgs[4];  // bat25.PNG
+    else batteryImg = batImgs[2];                     // bat3.PNG
 
-  if (batteryImg) {
-    let batW = 80;
-    let batH = 30;
-    let batX = sideW + 10;
-    let batY = dialogH + 10;
+    if (batteryImg) {
+      let batW = 80;
+      let batH = 30;
+      let batX = sideW + 10;
+      let batY = dialogH + 10;
 
-    image(batteryImg, batX, batY, batW, batH);
+      image(batteryImg, batX, batY, batW, batH);
 
-    // percentage overlay
-    push();
-    fill(255);
-    textSize(16);
-    textAlign(CENTER, CENTER);
-    text(percent + "%", batX + batW / 2, batY + batH / 2);
-    pop();
+      // percentage overlay
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(percent + "%", batX + batW / 2, batY + batH / 2);
+      pop();
+    }
   }
-}
 
   // BOTTOM: controller box (always visible)
   fill(0, 120);
@@ -293,6 +381,11 @@ function draw() {
     playGame(dialogH, gameH, controlH);
   } else if (gameState === "gameOver") {
     showGameOver(dialogH);
+  }
+
+  // --- Milestone overlay ---
+  if (milestoneChoiceActive) {
+    showMilestoneOverlay();
   }
 
   // If queue has lines and nothing is typing, start next automatically
@@ -361,14 +454,21 @@ function touchStarted() { handleClickOrTouch(); return false; } // prevent scrol
 
 function handleClickOrTouch() {
   let dialogH = height * 0.25;
-  let y = mouseY || touchY;
+  let y = mouseY || (touches.length ? touches[0].y : 0);
 
-  // --- Tap during gameOver restarts ---
+  // --- Block clicks only if overlay is active but waiting for response ---
+  if (milestoneChoiceActive && milestoneResponsePending) {
+    // Let continue button handle it
+    return;
+  }
+
+  // --- Tap during gameOver ---
   if (gameState === "gameOver") {
     resetGame();
     return;
   }
-  // --- Taps in dialog box ---
+
+  // --- Tap inside dialog box ---
   if (y <= dialogH) {
     if (dialogState === "typing") {
       typedText = currentDialogText;
@@ -377,7 +477,7 @@ function handleClickOrTouch() {
       showContinueArrow = true;
       return;
     } else if (dialogState === "waiting") {
-      if (showChoice) return; // must use buttons for choices
+      if (showChoice) return;
       showContinueArrow = false;
       dialogState = "idle";
       startTypingNext();
@@ -386,6 +486,13 @@ function handleClickOrTouch() {
       startTypingNext();
       return;
     }
+  }
+
+  // --- Tap outside dialog box ---
+  if (dialogState === "waiting" && !showChoice) {
+    typedText = "";
+    dialogState = "idle";
+    startTypingNext();
   }
 }
 
@@ -435,65 +542,171 @@ function clearChoiceButtons() {
 
 
 function createMilestoneButtons(options) {
+  // Remove old buttons
+  for (let b of milestoneButtons) b.remove();
   milestoneButtons = [];
-  let dialogH = height * 0.25;
-  let gameH = height * 0.50;
-  let controlH = height * 0.25;
 
-  let btnH = 36;
-  let spacingX = 10;
-  let spacingY = 10;
+  const cols = 2;
+  const spacingX = 20;
+  const spacingY = 15;
 
-  // 2 columns, 2 rows
-  let cols = 2;
-  let rows = ceil(options.length / cols);
+  const fontFamily = "Pixelify Sans, sans-serif";
+  const fontSizePx = 14;
+  const btnPaddingH = 12;
+  const btnPaddingV = 8;
+  const lineHeightPx = 18;
 
-  // button width calculation based on control area width
-  let totalSpacingX = (cols + 1) * spacingX;
-  let btnW = (width - totalSpacingX) / cols;
+  const gridMaxWidth = width * 0.7;
+  const maxBtnWidth = (gridMaxWidth - (cols - 1) * spacingX) / cols;
 
-  // **anchor buttons to the control area (bottom)**
-  let startY = dialogH + gameH + spacingY; // top of control area
-  let maxY = dialogH + gameH + controlH - btnH - spacingY; // bottom margin inside control area
+  // Hidden div to measure text height
+  let measureDiv = document.getElementById("milestone-measure-div");
+  if (!measureDiv) {
+    measureDiv = document.createElement("div");
+    measureDiv.id = "milestone-measure-div";
+    document.body.appendChild(measureDiv);
+    Object.assign(measureDiv.style, {
+      position: "absolute",
+      left: "-9999px",
+      top: "-9999px",
+      visibility: "hidden",
+      whiteSpace: "normal",
+      overflowWrap: "break-word",
+      wordWrap: "break-word",
+      boxSizing: "border-box",
+      padding: `${btnPaddingV}px ${btnPaddingH}px`,
+      fontFamily: fontFamily,
+      fontSize: `${fontSizePx}px`,
+      lineHeight: `${lineHeightPx}px`,
+      width: `${maxBtnWidth}px`
+    });
+  } else {
+    Object.assign(measureDiv.style, {
+      padding: `${btnPaddingV}px ${btnPaddingH}px`,
+      fontFamily: fontFamily,
+      fontSize: `${fontSizePx}px`,
+      lineHeight: `${lineHeightPx}px`,
+      width: `${maxBtnWidth}px`
+    });
+  }
 
+  // Precompute button heights
+  let btnHeights = [];
   for (let i = 0; i < options.length; i++) {
-    let col = i % cols;
-    let row = floor(i / cols);
+    measureDiv.innerText = options[i];
+    const measuredHeight = Math.max(measureDiv.scrollHeight, lineHeightPx + btnPaddingV * 2);
+    btnHeights.push(Math.round(measuredHeight));
+  }
 
-    let btnX = spacingX + col * (btnW + spacingX);
-    let btnY = startY + row * (btnH + spacingY);
+  // Find the tallest button
+  const uniformHeight = Math.max(...btnHeights);
 
-    // ensure buttons never go below control area
-    if (btnY > maxY) btnY = maxY - (row * (btnH + spacingY));
+  const startX = width / 2 - (maxBtnWidth * cols + (cols - 1) * spacingX) / 2;
+  let currentY = height * 0.59;
 
-    let btn = createButton(options[i]);
-    btn.position(btnX, btnY);
-    btn.size(btnW, btnH);
-    
+  for (let r = 0; r < Math.ceil(options.length / cols); r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      if (i >= options.length) break;
 
-    btn.style("font-family", "Pixelify Sans");
-    btn.style("font-size", "14px");
-    btn.style("color", "#fff");      // optional, to match other text
-    btn.style("background-color", "#000"); // optional
+      const x = startX + c * (maxBtnWidth + spacingX);
+      const y = currentY;
 
-    btn.mousePressed(() => milestoneChoiceSelected(i));
-    btn.touchStarted(() => { milestoneChoiceSelected(i); return false; });
+      const btn = createButton(options[i]);
+      btn.position(x, y);
+      btn.size(maxBtnWidth, uniformHeight);
 
-    milestoneButtons.push(btn);
+      btn.style("font-family", fontFamily);
+      btn.style("font-size", `${fontSizePx}px`);
+      btn.style("color", "#fff");
+      btn.style("background-color", "#000");
+      btn.elt.style.whiteSpace = "normal";
+      btn.elt.style.overflowWrap = "break-word";
+      btn.elt.style.wordWrap = "break-word";
+      btn.elt.style.lineHeight = `${lineHeightPx}px`;
+      btn.elt.style.padding = `${btnPaddingV}px ${btnPaddingH}px`;
+      btn.elt.style.boxSizing = "border-box";
+      btn.elt.style.textAlign = "center";
+
+      btn.mousePressed(() => milestoneChoiceSelected(i));
+      btn.touchStarted(() => { milestoneChoiceSelected(i); return false; });
+
+      milestoneButtons.push(btn);
+    }
+    currentY += uniformHeight + spacingY; // move to next row
+  }
+
+  measureDiv.innerText = "";
+}
+
+
+
+
+function milestoneChoiceSelected(index) {
+  let milestone = milestoneChoices[currentMilestone];
+  if (!milestone) return;
+
+  if (index === 0 || index === 1) friendlyChoiceCount++;
+  else if (index === 2 || index === 3) unfriendlyChoiceCount++;
+ 
+  for (let b of milestoneButtons) b.remove();
+  milestoneButtons = [];
+  typedText = milestone.postResponses?.[index] ?? milestone.postResponses[0];
+  charIndex = 0;
+  dialogState = "waiting";
+
+
+  milestoneResponsePending = true;   
+  milestoneChoiceActive = true;
+
+  createMilestoneContinueButton();
+}
+
+
+function createMilestoneContinueButton() {
+  if (milestoneContinueBtn) return;
+
+  let btnW = 150;
+  let btnH = 40;
+  let x = width / 2 - btnW / 2;
+  let y = height * 0.75;
+
+  milestoneContinueBtn = createButton("Continue");
+  milestoneContinueBtn.position(x, y);
+  milestoneContinueBtn.size(btnW, btnH);
+  milestoneContinueBtn.style("font-family", "Pixelify Sans");
+  milestoneContinueBtn.style("font-size", "16px");
+  milestoneContinueBtn.style("color", "white");
+  milestoneContinueBtn.style("background-color", "black");
+
+  // Close overlay on click/tap
+  milestoneContinueBtn.mousePressed(closeMilestoneOverlay);
+  milestoneContinueBtn.touchStarted(() => { closeMilestoneOverlay(); return false; });
+}
+
+
+function closeMilestoneOverlay() {
+  milestoneChoiceActive = false;
+  milestoneResponsePending = false;
+  typedText = "";
+  dialogState = "idle";
+
+  // Remove the continue button
+  if (milestoneContinueBtn) {
+    milestoneContinueBtn.remove();
+    milestoneContinueBtn = null;
+  }
+
+  
+  if (gameState === "game") {
+  }
+
+  if (currentMilestone === 50) {
+  showEndingScreen();
   }
 }
 
 
-function milestoneChoiceSelected(index) {
-  // Remove buttons
-  for (let b of milestoneButtons) b.remove();
-  milestoneButtons = [];
-  milestoneChoiceActive = false;
-
-  // Show postText dialog for milestone
-  let postMsgs = milestoneChoices[currentMilestone].postText;
-  pushDialogLines(postMsgs);
-}
 
 // ---------------- Game flow ----------------
 function startGame() {
@@ -549,6 +762,10 @@ function playGame(dialogH, gameH, controlH) {
    let baseInterval = 40 - floor(score / 2);          // original spawn interval
    let reducedInterval = max(10, floor(baseInterval * 1.43)); // 30% fewer spawns
   if (frameCount % reducedInterval === 0) spawnArrow(dialogH, gameH);
+  }
+
+    while (arrows.length < 10) {
+    spawnArrow(dialogH, gameH);
   }
 
   // spawn purple lines after milestone 30
@@ -653,16 +870,16 @@ function playGame(dialogH, gameH, controlH) {
   }
 
   // joystick draw & input
-  if (!milestoneChoiceActive) {
-    let cx = width/2;
-    let cy = dialogH + gameH + controlH/2;
+ if (!milestoneResponsePending) {   // block joystick while response waiting
+  let cx = width/2;
+  let cy = dialogH + gameH + controlH/2;
 
-    fill(80); ellipse(cx, cy, joystickSize*2);
-    fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
+  fill(80); ellipse(cx, cy, joystickSize*2);
+  fill(160); ellipse(cx + joyX * joystickSize, cy + joyY * joystickSize, joystickSize);
 
-    player.x += joyX * playerSpeed;
-    player.y += joyY * playerSpeed;
-  }
+  player.x += joyX * playerSpeed;
+  player.y += joyY * playerSpeed;
+}
 }
 
 
@@ -685,6 +902,8 @@ function touchStarted() {
     dragStartY = mouseY;
     return false; // prevent scrolling
   }
+
+  
 
   // --- If not joystick, check other clicks/taps ---
   handleClickOrTouch();
@@ -754,6 +973,16 @@ function checkMilestones() {
   while (milestoneIndex < scoreMilestones.length) {
     let milestone = scoreMilestones[milestoneIndex];
     if (score >= milestone.score) {
+      
+      // Skip if this milestone overlay has already triggered
+      if (triggeredMilestones.has(milestone.score)) {
+        milestoneIndex++;
+        continue;
+      }
+
+      // Mark as triggered immediately
+      triggeredMilestones.add(milestone.score);
+
       // Check if milestone has choices
       if (milestoneChoices[milestone.score] && !milestoneChoiceActive) {
         milestoneChoiceActive = true;
@@ -772,13 +1001,13 @@ function checkMilestones() {
       // Special milestone effects
       if (milestone.score === 10 && !enableZigzagArrows) {
         enableZigzagArrows = true;
-        // pushDialogLines(["Uh oh… arrows might start zigzagging now!"]);
       }
 
       milestoneIndex++;
     } else break;
   }
 }
+
 
 // ---------------- Arrow spawn ----------------
 function spawnArrow(dialogH, gameH) {
@@ -834,10 +1063,174 @@ function spawnPurpleLine(dialogH, gameH) {
 
 // ---------------- GameOver ----------------
 function showGameOver(dialogH) {
-  fill(255);
-  textAlign(CENTER);
-  textAlign(LEFT, TOP);
+  // Full black overlay
+  push();
+  noStroke();
+  fill(0);
+  rect(0, 0, width, height);
+  pop();
+
+  // Center death image
+  let deathImg = cornerImages.death;
+  if (deathImg) {
+    let maxImgW = width * 0.55;
+    let maxImgH = height * 0.45;
+
+    let aspect = deathImg.width / deathImg.height;
+    let imgW = maxImgW;
+    let imgH = imgW / aspect;
+
+    if (imgH > maxImgH) {
+      imgH = maxImgH;
+      imgW = imgH * aspect;
+    }
+
+    let imgX = width / 2 - imgW / 2;
+    let imgY = height * 0.22;
+
+    image(deathImg, imgX, imgY, imgW, imgH);
+
+    // Text box under the image (slightly overlapping)
+    let boxW = width * 0.85;
+    let boxH = height * 0.20;
+    let boxX = width / 2 - boxW / 2;
+    let boxY = imgY + imgH - boxH * 0.2;
+
+    push();
+    rectMode(CORNER);
+    stroke(200);
+    strokeWeight(2);
+    fill(20);
+    rect(boxX, boxY, boxW, boxH, 6);
+    pop();
+
+    // Text inside the box
+    push();
+    fill(255);
+    textAlign(LEFT, TOP);
+    textFont("Pixelify Sans");
+    textSize(18);
+
+    let pad = 12;
+    text(
+      typedText,
+      boxX + pad,
+      boxY + pad,
+      boxW - pad * 2,
+      boxH - pad * 2
+    );
+    pop();
+
+    
+
+    // ---- MOVE EXISTING YES/NO BUTTONS HERE ----
+    if (yesBtn && noBtn) {
+      let btnW = 120;
+      let btnH = 40;
+
+      let centerY = boxY + boxH + 20;
+
+      yesBtn.position(width / 2 - btnW - 15, centerY);
+      yesBtn.size(btnW, btnH);
+      yesBtn.style("background-color", "black");
+      yesBtn.style("color", "white");
+      yesBtn.style("font-family", "Pixelify Sans");
+
+      noBtn.position(width / 2 + 15, centerY);
+      noBtn.size(btnW, btnH);
+      noBtn.style("background-color", "black");
+      noBtn.style("color", "white");
+      noBtn.style("font-family", "Pixelify Sans");
+
+      yesBtn.show();
+      noBtn.show();
+    }
+  }
 }
+
+function showMilestoneOverlay() {
+  if (!milestoneChoices[currentMilestone]) return;
+
+  // --- Overlay background ---
+  push();
+  noStroke();
+  fill(0);
+  rect(0, 0, width, height);
+  pop();
+
+  // --- Character image ---
+  let charImg = milestoneCharImg;
+  let maxImgW = width * 0.5;
+  let maxImgH = height * 0.35;
+  let aspect = charImg.width / charImg.height;
+  let imgW = maxImgW;
+  let imgH = imgW / aspect;
+  if (imgH > maxImgH) { imgH = maxImgH; imgW = imgH * aspect; }
+
+  let imgYOffset = -30; // move PNG up
+  let imgX = width / 2 - imgW / 2;
+  let imgY = height * 0.1 + imgYOffset;
+  image(charImg, imgX, imgY, imgW, imgH);
+
+  // --- Dynamic text box ---
+  let boxW = width * 0.85;
+  let pad = 12;
+  textFont("Pixelify Sans");
+  textSize(18);
+  textAlign(LEFT, TOP);
+
+  let words = typedText.split(" ");
+  let lines = [];
+  let currentLine = "";
+  for (let word of words) {
+    let testLine = currentLine ? currentLine + " " + word : word;
+    if (textWidth(testLine) > boxW - pad * 2) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
+  let lineH = textAscent() + textDescent() + 4;
+  let boxH = lines.length * lineH + pad * 2;
+
+  let boxYOffset = -14; 
+  let boxX = width / 2 - boxW / 2;
+  let boxY = imgY + imgH - boxH * 0.25 + boxYOffset;
+
+  push();
+  rectMode(CORNER);
+  stroke(200);
+  strokeWeight(2);
+  fill(20);
+  rect(boxX, boxY, boxW, boxH, 6);
+  pop();
+
+  push();
+  fill(255);
+  textFont("Pixelify Sans");
+  textSize(18);
+  textAlign(LEFT, TOP);
+  for (let i = 0; i < lines.length; i++) {
+    text(lines[i], boxX + pad, boxY + pad + i * lineH);
+  }
+  pop();
+
+  // --- Buttons ---
+  if (!milestoneResponsePending && milestoneButtons.length === 0 && milestoneChoices[currentMilestone]?.options) {
+    createMilestoneButtons(
+      milestoneChoices[currentMilestone].options,
+      boxY + boxH + 10 
+    );
+  }
+}
+
+
+
+
+
 
 function resetGame() {
   arrows = [];
@@ -850,10 +1243,25 @@ function resetGame() {
   dialogState = "idle";
   showContinueArrow = false;
   showChoice = false;
-  enableZigzagArrows = false;   // <--- reset zigzag arrows
+  enableZigzagArrows = false;   
   clearChoiceButtons();
   gameState = "dialog";
   setCornerImage("default");  
   startTypingNext();
 }
  
+function showEndingScreen() {
+  gameFinished = true;  
+  arrows = [];          
+  arrowSpeed = 0;
+  player = null;
+
+
+  if (friendlyChoiceCount >= unfriendlyChoiceCount) {
+    typedText = "Cable thinks he made a great friend today, he seems to be full of energy.";
+  } else {
+    typedText = "Cable thinks you are a horrible person, he seems to be crying in a corner...";
+  }
+
+  currentCornerImage = null;
+}
