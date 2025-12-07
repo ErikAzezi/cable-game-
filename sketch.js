@@ -91,10 +91,10 @@ let milestoneChoices = {
      ]
     },
   30: {
-    question: ["Electricity is leaking! those purple lines will slow you down if you touch them."],
-    options: ["why is it purple", "can we take a break", "OK", "you're designed poorly"],
+    question: ["Electricity is leaking! those purple wires will get us tangled if you touch them."],
+    options: ["tangled?", "can we take a break", "OK", "you're designed poorly"],
     postResponses: [
-    "I dont know, maybe its just purple electricity?",
+    "yes, it will slow us down a lot.",
     "No",
     "so you understand what I am saying right?",
     "you look poorly designed too."
@@ -122,7 +122,7 @@ let milestoneChoices = {
   }
 };
 
-// --- Dialog storage (queue-based) ---
+// --- Dialog storage ---
 let dialogQueue = [
   "Hey YOU, what's your name? ⚡",
   "ok, nice to meet you, I happened to be in a bit of a bind here.",
@@ -180,11 +180,11 @@ function preload() {
   cornerImages.default = dialogcharacterImg; 
   cornerImages.death = loadImage("plugnose.PNG");
   bgImg = loadImage("background5.png"); 
-  playerImg = loadImage("playmodel.PNG");
+  playerImg = loadImage("playmodel2.PNG");
   zapImgs[0] = loadImage("zap1.PNG");
   zapImgs[1] = loadImage("zap2.PNG");
-  plugImg = loadImage("plug2.PNG");
-  slowEffectImg = loadImage("purplesloweffect.PNG");
+  plugImg = loadImage("plug3.PNG");
+  slowEffectImg = loadImage("purplesloweffect2.PNG");
   batImgs[0] = loadImage("bat1.PNG");   // 0–20%
   batImgs[3] = loadImage("bat15.PNG");  // 20–40%
   batImgs[1] = loadImage("bat2.PNG");   // 40–60%
@@ -203,35 +203,32 @@ function getViewportSize() {
 }
 
 function setup() {
-  // get correct visible viewport size on mobile
   textFont('Pixelify Sans');
   const vp = getViewportSize();
   let w = vp.w;
   let h = vp.h;
 
-  // create canvas and make it behave like a full-screen element
-  let cnv = createCanvas(w, h);
-  cnv.style('display', 'block');   // remove inline gap the browser sometimes adds
-  cnv.position(0, 0);             // ensure top-left corner
 
-  // optional: prevent touch scrolling/pinch on canvas for better mobile behavior
+  let cnv = createCanvas(w, h);
+  cnv.style('display', 'block');   
+  cnv.position(0, 0);             
+
+  
   if (cnv.elt) {
     cnv.elt.style.touchAction = 'none';
     cnv.elt.style.userSelect = 'none';
   }
 
-  // Recalculate layout sizes (use these global values later if you reference them)
-  // If you rely on dialogH/gameH/controlH as variables outside draw(), you can set them:
-  // dialogH = height * 0.22; gameH = height * 0.58; controlH = height * 0.20;
+  
   currentCornerImage = cornerImages.default;
   textAlign(LEFT, TOP);
   textSize(18);
   noStroke();
-  startTypingNext(); // begin initial dialog
+  startTypingNext(); 
 }
 
 function windowResized() {
-  // resize canvas to full viewport
+  
   resizeCanvas(windowWidth, windowHeight);
 }
 
@@ -250,7 +247,7 @@ function draw() {
 
     let wrapWidth = width * 0.8; // wrap at 80% of screen width
 
-    // split text into lines that fit wrapWidth
+    
     let words = typedText.split(" ");
     let lines = [];
     let currentLine = "";
@@ -376,7 +373,7 @@ function draw() {
   // Dialog typing update (non-blocking)
   if (dialogState === "typing") updateTyping();
 
-  // Game runs independently when in "game" or even when dialog shows
+  
   if (gameState === "game") {
     playGame(dialogH, gameH, controlH);
   } else if (gameState === "gameOver") {
@@ -436,7 +433,6 @@ function updateTyping() {
     if (charIndex >= currentDialogText.length) {
       dialogState = "waiting";
       showContinueArrow = dialogQueue.length > 0 || showChoice;
-      // if this line requests choice, ensure showChoice true (buttons created in draw)
       return;
     }
   }
@@ -444,7 +440,6 @@ function updateTyping() {
 
 function pushDialogLines(lines) {
   for (let l of lines) dialogQueue.push(l);
-  // if idle, start immediately (without pausing game)
   if (dialogState === "idle" || gameState === "game") startTypingNext();
 }
 
@@ -456,9 +451,8 @@ function handleClickOrTouch() {
   let dialogH = height * 0.25;
   let y = mouseY || (touches.length ? touches[0].y : 0);
 
-  // --- Block clicks only if overlay is active but waiting for response ---
+  
   if (milestoneChoiceActive && milestoneResponsePending) {
-    // Let continue button handle it
     return;
   }
 
@@ -501,14 +495,14 @@ function handleClickOrTouch() {
 function createChoiceButtons() {
   if (yesBtn || noBtn) return;
   let btnH = 36;
-  let btnY = height - btnH - 20;  // move buttons to bottom of screen
+  let btnY = height - btnH - 20;  
   let spacing = 10;
 
   yesBtn = createButton("YES");
   noBtn  = createButton("NO");
 
   // center buttons horizontally
-  let totalW = 100 * 2 + spacing; // two buttons of width 100 + spacing
+  let totalW = 100 * 2 + spacing; 
   let startX = width/2 - totalW/2;
 
   yesBtn.position(startX, btnY);
@@ -638,8 +632,6 @@ function createMilestoneButtons(options) {
 
   measureDiv.innerText = "";
 }
-
-
 
 
 function milestoneChoiceSelected(index) {
@@ -804,18 +796,30 @@ function playGame(dialogH, gameH, controlH) {
         continue;
       }
 
+          if (!a.good) {
+        push();
+        stroke(200, 200, 200, 25);
+        strokeWeight(1);
+        line(a.cableStart.x, a.cableStart.y, a.x, a.y); // start → current position
+        pop();
+    }
+
       push();
       translate(a.x, a.y);
       rotate(atan2(a.dy, a.dx));
       imageMode(CENTER);
 
-      if (a.good) { 
-      let img = random(zapImgs);
-      image(img, 0, 0, 15, 15);
-      } else { 
-      image(plugImg, 0, 0, 15, 15);
-      }
-      pop();
+          if (a.good) { 
+        let img = random(zapImgs);
+        image(img, 0, 0, 15, 15);
+    } else { 
+        image(plugImg, 0, 0, 15, 15);
+    }
+    pop();
+
+    
+    
+    
 
 
       let d = dist(player.x, player.y, a.x, a.y);
@@ -974,13 +978,11 @@ function checkMilestones() {
     let milestone = scoreMilestones[milestoneIndex];
     if (score >= milestone.score) {
       
-      // Skip if this milestone overlay has already triggered
       if (triggeredMilestones.has(milestone.score)) {
         milestoneIndex++;
         continue;
       }
 
-      // Mark as triggered immediately
       triggeredMilestones.add(milestone.score);
 
       // Check if milestone has choices
@@ -1011,7 +1013,7 @@ function checkMilestones() {
 
 // ---------------- Arrow spawn ----------------
 function spawnArrow(dialogH, gameH) {
-  let sideW = 30; // same border width as playGame
+  let sideW = 30; 
   let topY = dialogH + padding;
   let bottomY = dialogH + gameH - padding;
   let leftX = sideW + padding;
@@ -1031,6 +1033,9 @@ function spawnArrow(dialogH, gameH) {
 
   a.color = a.good ? color(0,255,0) : color(255,0,0);
 
+  if (!a.good) {
+    a.cableStart = { x: a.x, y: a.y }; // cable starts at spawn point
+}
   // Zigzag arrows
   if (enableZigzagArrows && random() < 0.5) { 
     a.zigzag = true;
